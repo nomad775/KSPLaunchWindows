@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orbit Equations</title>
+
+<!--
+    <script type="text/javascript" async src="https://example.com/MathJax.js?config=AM_CHTML"></script>
+-->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'>
+    </script>
+    
+    <style>
+        div.pvc{
+            width: 40%;
+            margin-left: 10%;
+            padding: 10pt;
+            border: 2px red solid;
+        }
+        
+        .equation{
+            /*text-align: center; */
+            margin-left:10%;
+        }
+        
+    </style>
+</head>
+    <body>
+       <h1>Orbit Equations</h1> 
+        <h2>Uniform circular motion</h2>
+        <p>$$v= \sqrt{\frac{GM}{2}} = \sqrt{\frac{\mu}{r^2}} $$</p>
+        <p>From balance of forces</p>
+        <p>$$\frac{2GMm}{(R+r)^2} = m\omega^2r \approx GM = \omega^3r^3$$</p>
+        <p>\(\omega^2r^3\) is constant. Period can be found by</p>
+        <p>$$\omega = \frac{2\pi}{P} \Rightarrow P^2 = \frac{4\pi^2a^3}{G(M+m)} \approx P^2 = \frac{4\pi^2a^3}{GM}$$</p>
+        <p>$$P = 2\pi\sqrt{\frac{a^3}{\mu}}$$</p>
+        <p>At Ap and Pe flight angle is zero so </p>
+        <p>$$r_pv_p = r_av_a$$</p>
+        <p>at other locations $$v\sin{\gamma} = \omega r^2$$ where \(\gamma\) is the zeineth angle</p>
+        
+        <h2>From Conservation of Engergy</h2>
+        <p>Velcoity and radius at Ap and Pe</p>
+        <p>\[ v_p = \sqrt{\frac{2\mu r_a}{r_p(r_a+r_p)}}\]</p>
+        <p>\[ v_a = \sqrt{\frac{2\mu r_p}{r_a(r_a+r_p)}}\]</p>
+        <p>\[ r_a = \frac{r_p}{(\frac{2\mu}{r_p v_p^2}-1)} \]</p>
+        <p>\[ r_p = \frac{r_a}{(\frac{2\mu}{r_a v_a^2}-1)}\]</p>
+        
+        <h1>Eccentric Orbits</h1>
+        <p>Eccencticity can found from \(r_a\) and \(r_p\) or it also be fround directly by</p>
+        <p>\[ e = \frac{r_pv^2}{\mu}-1\]</p>
+        <p>\[r_p = a(1-e)\]</p>
+        <p>\[r_a = a(1+e)\]</p>
+        <p>Taking \(\phi\), the flight angle as \(90-\gamma\) </p>
+        <p>\[e=\sqrt{(\frac{rv^2}{\mu} - 1) \cos^2{\phi} + sin^2{\phi}}\]</p>
+        
+        <h2>True Anomaly</h2>
+        <p>\[\tan{\nu} - \frac{ \frac{rv^2}{\mu} \cos{\phi}\sin{\phi}}{\frac{rv^2}{\mu}cos^2{\phi}-1}\]</p>
+        <p>\[a = \frac{1}{\frac{2}{r}-\frac{v^2}{\mu}}\]</p>
+        
+        <h2>Position in Oribt</h2>
+        <p>M is mean anomaly.</p>
+    </body>
+</html>

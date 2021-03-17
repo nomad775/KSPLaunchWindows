@@ -1,0 +1,173 @@
+<html>
+    <head>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <style>
+            
+            
+            #viewer{
+                width: 50%;
+                border-width: 10px;
+                border-color: red;
+                background-color: none;
+                margin: 10;
+            }
+            
+            .button{
+                font-size: 24pt;
+                
+            }
+            
+        </style>
+        
+        <script>
+            
+            var isPaused = false;
+            var svgElement;
+            var timer;
+                        
+            function zoomSVG(){
+               
+                var zoom = document.forms["settings"]["zoomSlider"].value;
+                
+                console.log("zoom: " + zoom);
+                
+                var ul = 500/zoom;
+                var hw = ul*2;
+                var setting = -ul + " " + -ul + " " + hw + " " + hw;
+                
+                var attr=document.getElementById("solarSystem").attributes.getNamedItem("viewBox");
+                attr.nodeValue = setting;
+                
+                document.querySelectorAll(".planet").forEach( 
+                    function(item, index){
+                        var radius = item.attributes.getNamedItem("r");
+                        radius.nodeValue=25/zoom;
+                        console.log("R:" + radius);
+                    }
+                )
+                
+            }
+            
+            function togglePause(){
+                
+                svg = document.getElementById("solarSystem");
+                
+                isPaused = svg.animationsPaused();
+                console.log(svg.animationsPaused() );
+                
+                if(isPaused){
+                    console.log("set to unpause");
+                    svg.unpauseAnimations()
+                    timer = setInterval(updateTime,140.8);
+                }else
+                    {
+                        console.log("set to paused");
+                        clearInterval(timer);
+                        svg.pauseAnimations();
+                    };
+                
+            }
+                
+            
+            function updateTime(){
+                
+                var currentTime = svg.getCurrentTime();
+                // 1 sec = 1 year
+                // 1/426 sec = 1 day
+                
+                var year = Math.trunc(currentTime/60) + 1;
+                var days = (currentTime * 426/60) % 426;
+                
+                var displayTime = "year " + year + ", day " + days.toFixed(2);
+                
+                var timeSpan = document.getElementById("currentTime");
+                timeSpan.textContent = displayTime;
+                
+            }
+            
+        </script>
+    </head>
+    
+    <div id="settings">
+        
+        <form name="settings">
+            <input name="zoomSlider" type="range" min="1" max="10" value="1" onchange="zoomSVG()"/>
+        </form>
+        
+        <p onclick="togglePause()"><i class="button fa fa-pause-circle-o"></i></p>
+        <p>Current Time : <span id="currentTime">00:00</span></p>
+    </div>
+    
+<!--    onclick="puaseAnimation">-->
+    
+    <div id="viewer">
+        
+        <svg id="solarSystem" height="500" width="500" viewBox="-250 -250 500 500" onclick="togglePause"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            
+            
+            <!-- MEAN ORBITs -->
+            
+            <circle id="dunaMeanOrbit" cx="0" cy="0" r="207.26" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3">
+            </circle>
+            
+            <circle id="kerbinOrbit" cx="0" cy="0" r="136" fill ="none" stroke="cyan"/>
+            
+            
+            <circle class = "planet_1" id="duna_mean" cx="147.83" cy="145.27" r="5" fill="crimson" transparency=".3" stroke="green">
+                <animateTransform attributeName="transform"
+                    type="rotate"
+                    from="360 0 0" to="0 0 0"
+                    begin="0s" dur="112.88"
+                    repeatCount="indefinite"
+                />
+            </circle>
+            
+            
+            <circle class = "planet_1" id="kerbin" cx="-136" cy="0" r="15" fill="cyan" stroke="green">
+                <animateTransform attributeName="transform"
+                    type="rotate"
+                    from="360 0 0" to="0 0 0"
+                    begin="0s" dur="60"
+                    repeatCount="indefinite"
+                />
+            </circle>
+            
+            
+            <!-- ELIPICAL ORBIT -->
+            
+            <!-- path used for orbits since they can also by used for animation   -->
+            <!-- parameters are: rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
+            <!-- M ap.x, ap.y 
+                 A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
+            <!-- M pe.x pe.y
+                 A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
+            
+            <path class="orbit" id="dunaOrbit"   d="M  155.37 152.68  A 207.26 207.00  -315.5  0 0 -140.3 -137.87  A 207.26 207.00  -315.5  0 0  155.37 152.68 " stroke="red" fill="none"/>
+            
+            <circle class = "planet" id="duna" cx="155.37" cy="152.68" r="5" fill="crimson" stroke = "black" transform="translate(-155.37,-152.68)">
+            </circle>
+            
+            <!-- ANIMATIONS -->
+            
+            <animateMotion xlink:href="#duna" 
+                            dur="112.88" repeatCount="indefinite"
+                           calcMode="spline" keyTimes="0;1" keySplines="0.254 0.5 0.746 0.5">              
+                <mpath xlink:href="#dunaOrbit"/>
+            </animateMotion>
+            
+            
+            <!-- DECORATIONS -->
+            
+            <polygon id="mymarker" points = "0,0 5,0, 5,-5 0,-10, -5,-5, -5,0"/>
+            
+            <use href="#mymarker" transform="translate(-140.3, -138.87) rotate(135)" height="20" width="20" stroke="black" fill="green"/>
+            
+            <use href="#mymarker" transform="translate(155.4, 152.7) rotate(135)" height="20" width="20" stroke= "black" fill="red"/>
+            
+            <line x1="0" y1="0" x2="250" y2="0" stroke="yellow"/>
+            
+            
+            
+        </svg>
+    </div>
+</html>

@@ -1,0 +1,197 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        
+        <style>
+            #viewer{
+                width: 50%;
+                border-width: 10px;
+                border-color: red;
+                background-color: none;
+                margin: 10;
+            }
+            
+            .button{
+                font-size: 24pt;
+                
+            }
+            
+        </style>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script><script src="xferWindowClasses.js"></script>
+        <script>
+            
+            var r = 10;
+            var scaleFactor = 1;
+            
+            var planet;
+            var sma;
+            var LnPe;
+            var ecx;
+            var ecy;
+            
+            function scale(value){
+                value=Math.round(value/1e6)/1e2;
+                return value * scaleFactor;
+            }
+            
+            function drawOrbits(){
+                
+                planet = planets[6];
+                sma = planet.sma;
+                
+                var ecc = planet.ecc;
+                var c =  planet.c;
+                var ap = sma+c;
+                var pe = sma-c;
+                var LnPe = planet.LnPe;
+                var mean0 = planet.mean0;
+                
+                var l = sma*(1-ecc**2);
+                var b = sma * Math.sqrt(1-ecc**2);
+                var r = l/(1 + ecc * Math.cos(pi/2));
+                
+                console.log("l", l);
+                console.log("b", b);
+                console.log("r",r );
+                
+                console.log("", planet.rAtLn(LnPe + pi/2));
+                
+                
+                scaleFactor = 250/scale(ap+c);
+                sma=scale(sma);
+                c = scale(c);
+                ap = scale(ap);
+                pe = scale(pe);
+                
+                var minA = sma*Math.sqrt(1-ecc**2);
+                console.log("simi minor axis: " + minA);
+                
+                $("#meanCentered").attr("r", sma);
+                
+                $("#ellipticalOrbit").attr("rx",sma);
+                $("#ellipticalOrbit").attr("ry",minA);
+                $("#meanEccentric").attr("r", sma);
+                
+                $("#focus").attr("cx", c);
+                
+                var transformStr = "translate(-cx, 0) rotate(d, cx, 0) ";
+                
+                transformStr = transformStr.replaceAll("cx", c);                
+                transformStr = transformStr.replace("d", -LnPe*180/pi);
+                console.log(transformStr);
+                
+                $("#ellipticalGroup").attr("transform",transformStr);
+                
+                cx = sma * Math.cos(LnPe + mean0);
+                cy = -sma * Math.sin(LnPe + mean0);
+                
+                $("#planet_meanConcentric").attr("cx", cx);
+                $("#planet_meanConcentric").attr("cy", cy);
+                
+                ecx = c * Math.cos(LnPe);
+                ecy = -c * Math.sin(LnPe);
+                
+                $("#planet_meanEccentric").attr("cx", cx - ecx);
+                $("#planet_meanEccentric").attr("cy", cy - ecy);
+                
+                $("#planet").attr("cx", cx - ecx);
+                $("#planet").attr("cy", cy - ecy);
+            }
+            
+            function updatePosition(){
+                
+                var y = $("input[name='year'").val()-1;
+                var d = $("input[name='day'").val()-1;
+                
+                var t = convertDateToSeconds(y,d,0,0);
+
+                var M = planet.MeanLnAtTimeT(t)
+                var cx_meanC = sma * Math.cos(M);
+                var cy_meanC = -sma * Math.sin(M);
+                
+                $("#planet_meanConcentric").attr("cx", cx_meanC);
+                $("#planet_meanConcentric").attr("cy", cy_meanC);
+                
+                var cx_meanE = cx_meanC - ecx;
+                var cy_meanE = cy_meanC - ecy;
+                
+                $("#planet_meanEccentric").attr("cx", cx_meanE);
+                $("#planet_meanEccentric").attr("cy", cy_meanE);
+                
+                var lnt = planet.LnAtTimeT(t);
+                var r = scale(planet.rAtLn(lnt));
+                
+                var cx_ellip = r * Math.cos(lnt);
+                var cy_ellip = -r * Math.sin(lnt);
+                
+                $("#planet").attr("cx", cx_ellip);
+                $("#planet").attr("cy", cy_ellip);
+            }
+            
+            
+            $(document).ready(function(){
+                console.log("document ready");
+                getPlanetsXML(drawOrbits)
+                });
+
+        </script>
+        
+    </head>
+    
+    <div id="settings">
+        
+        <form name="settings">
+            <input name="year" type="number" value="1" onchange="updatePosition()"/>
+            <input name="day" type="number" value="1" onchange="updatePosition()"/>
+            <br>
+            <input name="zoomSlider" type="range" min="1" max="10" value="1" onchange="zoomSVG()"/>
+        </form>
+        
+        <p>Current Time : <span id="currentTime">00:00</span></p>
+        <p>angle of cneter: <span id="aoc">0.00</span></p>
+    </div>
+        
+    <div id="viewer">
+        
+        <svg id="solarSystem" height="500" width="500" viewBox="-250 -250 500 500" onclick="togglePause"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            
+            
+            <!-- ELIPICAL ORBIT -->
+            
+            <!-- path used for orbits since they can also by used for animation   -->
+            <!-- parameters are: rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
+            <!-- M ap.x, ap.y 
+                 A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
+            <!-- M pe.x pe.y
+                 A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
+            <circle cx="0" cy="0" r="5" stroke="black" fill="none"/>
+            
+            <g id="ellipticalGroup">
+                <ellipse id="ellipticalOrbit" cx="0" cy="0" rx="207.26" ry="207" stroke="red" fill="none"/>
+                <circle id="meanEccentric" cx="0" cy="0" r="207.26" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
+                <line x1="-5" y1="0" x2="5" y1=0 stroke = "blue"/>
+                <line xy="0" y1="-5" x2="0" y2="5" stroke="blue"/>
+                <circle id="focus" cx="12" cy="0" r="3" stroke=black/>
+            </g>
+            
+             <!-- MEAN ORBITs -->
+            
+            <circle id="meanCentered" cx="0" cy="0" r="207.26" fill="none" stroke="blue" stroke-width="1" stroke-dashArray="5,3"/>
+            
+            
+            <!-- PLANETS -->
+          
+            <circle id="planet" cx="155.37" cy="152.68" r="10" fill="crimson" stroke = "black"/>
+            
+            <circle id="planet_meanEccentric" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"//>            
+            <circle id="planet_meanConcentric" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
+            
+            
+            <!-- DECORATIONS -->
+            
+            
+            
+        </svg>
+    </div>
+</html>

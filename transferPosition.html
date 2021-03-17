@@ -1,0 +1,430 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        
+        <style>
+            #viewer{
+                width: 50%;
+                border-width: 10px;
+                border-color: red;
+                background-color: none;
+                margin: 10;
+            }
+            
+            .button{
+                font-size: 24pt;
+                
+            }
+            
+        </style>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="orbitalMechanics.js"></script>
+        <script>
+            
+            var r = 10;
+  
+            function scalePlanets(innerPlanet, outerPlanet){
+                
+                var rMax_o = outerPlanet.sma + 2*outerPlanet.c;
+                var rMax_d = innerPlanet.sma + 2* innerPlanet.c;
+                
+                if(rMax_o > rMax_d){
+                    rMax = rMax_o;
+                }else{
+                    rMax = rMax_d;
+                }
+                
+                scaleFactor = 1/(1e8)*250/(rMax/1e8);
+                
+                innerPlanet.scaleFactor = scaleFactor;
+                outerPlanet.scaleFactor = scaleFactor;
+                
+            }
+        
+            function drawOrbits(){
+                
+                innerPlanet = planets[2];
+                outerPlanet = planets[4];
+                
+                scalePlanets(innerPlanet, outerPlanet);
+                
+                innerPlanet.jqOrbit = $("#orbit_i");
+                innerPlanet.jqOrbit_meanConcentric = $("#orbit_meanConcentric_i");
+                innerPlanet.jqOrbit_meanEccentric = $("#orbit_meanEccentric_i")
+                
+                innerPlanet.jqEllipticalGroup = $("#ellipticalGroup_i");
+                
+                innerPlanet.jqPlanet = $("#planet_i");
+                innerPlanet.jqPlanet_meanConcentric = $("#planet_meanConcentric_i");
+                innerPlanet.jqPlanet_meanEccentric = $("#planet_meanEccentric_i");
+                
+                drawOrbit(innerPlanet);
+                updatePosition(innerPlanet, 0);
+                
+                outerPlanet.jqOrbit = $("#orbit_o");
+                outerPlanet.jqOrbit_meanConcentric = $("#orbit_meanConcentric_o");
+                outerPlanet.jqOrbit_meanEccentric = $("#orbit_meanEccentric_o")
+                
+                outerPlanet.jqEllipticalGroup = $("#ellipticalGroup_o");
+               
+                outerPlanet.jqPlanet = $("#planet_o");
+                outerPlanet.jqPlanet_meanConcentric = $("#planet_meanConcentric_o");
+                outerPlanet.jqPlanet_meanEccentric = $("#planet_meanEccentric_o");
+                
+                drawOrbit(outerPlanet);
+                updatePosition(outerPlanet, 0);
+            }
+            
+            
+            function drawOrbit(planet){
+
+                var sma = planet.sma;
+                var ecc = planet.ecc;
+                var b = sma*Math.sqrt(1-ecc**2);
+                var c = planet.c;
+                var LnPe_deg = planet.LnPe * 180/pi;
+                
+                /*console.log(sma);
+                console.log(b);
+                console.log(c);*/
+                
+                planet.jqOrbit_meanConcentric.attr("r", sma);
+                planet.jqOrbit_meanEccentric.attr("r", sma);
+                planet.jqOrbit.attr("rx", sma);
+                planet.jqOrbit.attr("ry", b);
+                
+                planet.jqEllipticalGroup.children(".focusPoint").attr("cx", c);
+                
+                var transformStr = "translate(-cx, 0) rotate(d, cx, 0) ";
+                
+                transformStr = transformStr.replaceAll("cx", c);                
+                transformStr = transformStr.replace("d", -LnPe_deg);
+                
+                //console.log(transformStr);
+                console.log(planet.jqEllipticalGroup);
+                
+                planet.jqEllipticalGroup.attr("transform", transformStr);
+                
+            }
+            
+            function updateTime(){
+                var y = $("input[name='year']").val()-1;
+                var d = $("input[name='day']").val()-1;
+                
+                /*if(d<0){
+                    if(y==0){
+                        $("input[name='year']").val(1);
+                        $("input[name='day']").val(1);
+                        return;
+                    }
+                    
+                    d=426
+                    y=y-1
+                    $("input[name='day']").val(d);
+                    $("input[name='year']").val(y);
+                }
+                
+                if(y<0){
+                        $("input[name='year']").val(1);
+                        $("input[name='day']").val(1);
+                        return;
+                    }
+                
+                if(d>=426){
+                    y=y+2;
+                    d=1;
+                    
+                    $("input[name='year']").val(y);
+                    $("input[name='day']").val(d);
+                }
+                */
+                var t = convertDateToSeconds(y,d,0,0);
+                
+                updatePosition(innerPlanet, t);
+                updatePosition(outerPlanet, t);
+                meanTransferLines(innerPlanet, outerPlanet, t);
+                //trueTransferLines(innerPlanet, outerPlanet, t);
+                outerPlanetFuture(t);
+                
+                var LnMean_i = (innerPlanet.MeanLnAtTimeT(t)*180/pi).toFixed(2);
+                var Ln_i = -(innerPlanet.LnAtTimeT(t) * 180/pi).toFixed(2);
+                
+                var LnMean_o = (outerPlanet.MeanLnAtTimeT(t)*180/pi).toFixed(2);
+                var Ln_o = -(outerPlanet.LnAtTimeT(t)*180/pi).toFixed(2);
+                
+                var phi_mean = LnMean_o - LnMean_i;
+                var phi = Ln_o-Ln_i;
+                
+                $("#innerPlanetData td:eq(1)").text(LnMean_i);
+                $("#innerPlanetData td:eq(2)").text(Ln_i);
+                $("#innerPlanetData td:eq(3)").text(LnMean_i-Ln_i);
+                
+                $("#outerPlanetData td:eq(1)").text(LnMean_o);
+                $("#outerPlanetData td:eq(2)").text(Ln_o);
+                $("#outerPlanetData td:eq(3)").text(LnMean_o-Ln_o);
+            }
+            
+            function updatePosition(planet, t){
+                
+                var sma = planet.sma;
+                var M = planet.MeanLnAtTimeT(t)
+                
+                var cx_meanC = sma * Math.cos(M);
+                var cy_meanC = -sma * Math.sin(M);
+                
+                planet.jqPlanet_meanConcentric.attr("cx", cx_meanC);
+                planet.jqPlanet_meanConcentric.attr("cy", cy_meanC);
+                
+                var cx_meanE = cx_meanC - planet.cx;
+                var cy_meanE = cy_meanC + planet.cy;
+                
+                planet.jqPlanet_meanEccentric.attr("cx", cx_meanE);
+                planet.jqPlanet_meanEccentric.attr("cy", cy_meanE);
+                
+                var lnt = planet.LnAtTimeT(t);
+                var r = planet.rAtLn(lnt);
+                
+                var cx_ellip = r * Math.cos(lnt);
+                var cy_ellip = -r * Math.sin(lnt);
+                
+                planet.jqPlanet.attr("cx", cx_ellip);
+                planet.jqPlanet.attr("cy", cy_ellip);
+                
+            }
+            
+            function meanTransferLines(innerPlanet, outerPlanet, t){
+                
+                var r_i = innerPlanet.sma;
+                var Ln_i = innerPlanet.MeanLnAtTimeT(t)
+                
+                var x_meanC_i = r_i * Math.cos(Ln_i);
+                var y_meanC_i = -r_i * Math.sin(Ln_i);
+                
+                // outer planet mean concentric orbit at rdv
+                var r_o = outerPlanet.sma;
+                var Ln_rdv = Ln_i - pi;
+                
+                var x_meanC_o = r_o * Math.cos(Ln_rdv);
+                var y_meanC_o = -r_o * Math.sin(Ln_rdv);
+                
+                $("#circle1").attr("cx", x_meanC_o);
+                $("#circle1").attr("cy", y_meanC_o);
+                $("#circle1").attr("stroke", "black");
+                
+                // transfer line
+                $("#line1").attr("x1", x_meanC_i);
+                $("#line1").attr("y1", y_meanC_i);
+                
+                $("#line1").attr("x2", x_meanC_o);
+                $("#line1").attr("y2", y_meanC_o);
+                
+                $("#line1").attr("stroke", "black");
+                
+                
+                //outer planet at tx
+                /*var sma_tx = (r_i + r_o)/2;
+                var tx_tof = pi * Math.sqrt((sma_tx/innerPlanet.scaleFactor)**3/mu_sun);
+                var deltaTheta_o = tx_tof / outerPlanet.period * 2*pi;
+                
+                var Ln_tx = Ln_rdv - deltaTheta_o;
+                
+                var cx = r_o * Math.cos(Ln_tx);
+                var cy = -r_o * Math.sin(Ln_tx);
+                
+                $("#circle2").attr("cx", cx);
+                $("#circle2").attr("cy", cy);
+                $("#circle2").attr("stroke", "blue");*/
+                
+            }
+            
+            
+            function outerPlanetFuture(t){
+                
+                var Ln_i = innerPlanet.MeanLnAtTimeT(t)
+                var Ln_rdv = Ln_i - pi;
+                
+                // mean values
+                var r_i = innerPlanet.sma;
+                var r_o = outerPlanet.sma;
+                
+                var sma_tx = (r_i + r_o)/2;
+                var tx_tof = pi * Math.sqrt((sma_tx/innerPlanet.scaleFactor)**3/mu_sun);
+                
+                var sma = outerPlanet.sma;
+                var M = outerPlanet.MeanLnAtTimeT(t + tx_tof);
+                
+                var cx_meanC = sma * Math.cos(M);
+                var cy_meanC = -sma * Math.sin(M);
+                
+                $("#circle2").attr("cx", cx_meanC);
+                $("#circle2").attr("cy", cy_meanC);
+                $("#circle2").attr("stroke", "red");
+                
+                // eccentric values
+                // tof based on eccentric radius
+                var r_o = outerPlanet.rAtLn(Ln_rdv);
+                var sma_tx = (r_i + r_o)/2;
+                var tx_tof = pi * Math.sqrt((sma_tx/innerPlanet.scaleFactor)**3/mu_sun);
+                
+                console.log("tof_true", (tx_tof/secondsPerDay).toFixed(1));
+                
+                var Ln_mean = outerPlanet.MeanLnAtTimeT(t+tx_tof);
+                var r_o = outerPlanet.rAtLn(Ln_mean);
+                var cx_meanE = r_o * Math.cos(Ln_mean);
+                var cy_meanE = -r_o * Math.sin(Ln_mean);
+                
+                $("#circle3").attr("cx", cx_meanE);
+                $("#circle3").attr("cy", cy_meanE);
+                $("#circle3").attr("stroke", "cyan");
+                
+                
+                var Ln_true = outerPlanet.LnAtTimeT(t+tx_tof);
+                var r = outerPlanet.rAtLn(Ln_true);
+                
+                var cx_ellip = r * Math.cos(Ln_true);
+                var cy_ellip = -r * Math.sin(Ln_true);
+                
+                $("#circle4").attr("cx", cx_ellip);
+                $("#circle4").attr("cy", cy_ellip);
+                $("#circle4").attr("stroke", "purple");
+                
+                console.log(r/innerPlanet.scaleFactor);
+            }
+            
+            function trueTransferLines(innerPlanet, outerPlanet, t){
+                
+                // inner planet 
+                var Ln_i = innerPlanet.MeanLnAtTimeT(t)
+                
+                var r_i = innerPlanet.sma;
+                var x_meanC_i = r_i * Math.cos(Ln_i);
+                var y_meanC_i = -r_i * Math.sin(Ln_i);
+                
+                // outer planet elliptical orbit at rdv
+                var Ln_rdv = Ln_i - pi;
+                var r_o = outerPlanet.rAtLn(Ln_rdv);
+                
+                var cx_rdv = r_o * Math.cos(Ln_rdv);
+                var cy_rdv = -r_o * Math.sin(Ln_rdv);
+                
+                $("#circle3").attr("cx", cx_rdv);
+                $("#circle3").attr("cy", cy_rdv);
+                $("#circle3").attr("stroke", "magenta");
+                
+                /*// transfer line
+                $("#line1").attr("x1", x_meanC_i);
+                $("#line1").attr("y1", y_meanC_i);
+                
+                $("#line1").attr("x2", x_meanC_o);
+                $("#line1").attr("y2", y_meanC_o);
+                
+                $("#line1").attr("stroke", "black");*/
+                
+                
+                //outer planet at tx
+                var sma_tx = r_i + r_o;
+                var tx_tof = pi * Math.sqrt((sma_tx/innerPlanet.scaleFactor)**3/mu_sun);
+                var deltaTheta_o = -tx_tof / outerPlanet.period * 2*pi;
+                
+                var Ln_tx = Ln_rdv - deltaTheta_o;
+                var r_oLnTx = outerPlanet.rAtLn(Ln_tx);
+                
+                var cx = r_oLnTx * Math.cos(Ln_tx);
+                var cy = -r_oLnTx * Math.sin(Ln_tx);
+                
+                $("#circle4").attr("cx", cx);
+                $("#circle4").attr("cy", cy);
+                $("#circle4").attr("stroke", "cyan");
+                
+            }
+            
+            
+            $(document).ready(function(){
+                console.log("document ready");
+                getPlanetsXML(drawOrbits)
+                });
+
+        </script>
+        
+    </head>
+    
+    <div id="settings">
+        
+        <form name="settings">
+            <input name="year" type="number" value="1" onchange="updateTime()"/>
+            <input name="day" type="number" value="1" onchange="updateTime()"/>
+            <br>
+            
+        </form>
+        
+        <p>Current Time : <span id="currentTime">00:00</span></p>
+        <p>angle of cneter: <span id="aoc">0.00</span></p>
+    </div>
+        
+    <div id="viewer">
+        
+        <svg id="solarSystem" height="500" width="500" viewBox="-250 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            
+            <!-- SUN -->
+            <circle cx="0" cy="0" r="10" stroke="orange" fill="yellow"/>
+            
+            <!--  ORBITS -->
+            <g id="ellipticalGroup_i">
+                <ellipse id="orbit_i" cx="0" cy="0" rx="136" ry="136" stroke="cyan" fill="none"/>
+                <circle id="orbit_meanEccentric_i" cx="0" cy="0" r="136" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
+                <line x1="-5" y1="0" x2="5" y1=0 stroke="cyan"/>
+                <line xy="0" y1="-5" x2="0" y2="5" stroke="cyan"/>
+                <circle id="focus_i" class="focusPoint" cx="12" cy="0" r="3" stroke="cyan"/>
+            </g>
+            
+            <g id="ellipticalGroup_o">
+                <ellipse id="orbit_o" cx="0" cy="0" rx="207.26" ry="207" stroke="red" fill="none"/>
+                <circle id="orbit_meanEccentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
+                <line x1="-5" y1="0" x2="5" y1=0 stroke="blue"/>
+                <line xy="0" y1="-5" x2="0" y2="5" stroke="blue"/>
+                <circle id="focus_o" class="focusPoint" cx="12" cy="0" r="3" stroke=black/>
+            </g>
+            
+             <!-- MEAN ORBITs -->
+            
+            <circle id="orbit_meanConcentric_i" cx="0" cy="0" r="13.6" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
+            <circle id="orbit_meanConcentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
+            
+            <!-- PLANETS -->
+                <!-- inner -->
+            <circle id="planet_i" cx="155.37" cy="152.68" r="10" fill="crimson" stroke = "black"/> 
+            <circle id="planet_meanConcentric_i" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
+            <circle id="planet_meanEccentric_i" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"//>            
+            
+                <!-- outer -->
+            <circle id="planet_o" cx="155.37" cy="152.68" r="10" fill="crimson" stroke = "black"/>
+            <circle id="planet_meanConcentric_o" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
+            <circle id="planet_meanEccentric_o" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
+            
+            
+            <!-- DECORATIONS -->
+            
+            <line id="line1" x1="0" y1="0" x2="120" y2="120"/>
+            <line id="line2" x1="0" y1="0" x2="120" y2="120"/>
+            <line id="line3" x1="0" y1="0" x2="120" y2="120"/>
+            
+            <circle id="circle1" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
+            <circle id="circle2" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/> 
+            <circle id="circle3" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
+            <circle id="circle4" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/> 
+            
+            
+        </svg>
+    </div>
+    <div>
+        <p id="innerPlanetStats"></p>
+        <p id="outerPlanetStats"></p>
+        <table>
+            <tr><th></th><th>mean</th><th>true</th><th>delta</th><th>delta</th></tr>
+            <tr id="innerPlanetData"><td>inner</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
+            <tr id="outerPlanetData"><td>outer</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
+            <tr><td>phase</td><td>0.0</td><td>0.0</td><td>0.0</td><td>--</td></tr>
+        </table>
+    </div>
+</html>
