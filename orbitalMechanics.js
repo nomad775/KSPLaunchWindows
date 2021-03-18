@@ -57,7 +57,7 @@ class Planet{
     LnPe = 0;
     mean0 = 0;
     mu = 0;
-    soi =0;
+    soi = 0;
 
     period=0;
     
@@ -147,8 +147,66 @@ class Planet{
     v(r){
         return math.sqrt(mu_sun /r);
     }
+             
+    meanPosition(t){
+        var M = this.MeanLnAtTimeT(t);
+        var x = this.sma * Math.cos(M);
+        var y = this.sma * Math.sin(M);
+        
+        return {x: x, y: y};
+    }
+             
+    truePosition(t){
+        var Ln = this.LnAtTimeT(t);
+        var r = this.rAtLn(Ln);
+        var x = r * Math.cos(Ln);
+        var y = r * Math.sin(Ln);
+        
+        return {x:x, y:y};
+    }
+             
 }
 
+class TransferOrbit{
+    
+    scaleFactor = 1;
+             
+    constructor(originPlanet, destinationPlanet){
+        
+        this.originPlanet = originPlanet;
+        this.destinationPlanet = destinationPlanet;
+        
+        this.scaleFactor = this.originPlanet.scaleFactor;
+        
+        var r_i = this.originPlanet.sma;
+        var r_o = this.destinationPlanet.sma;
+        
+        this.ap_mean = (r_i > r_o) ? r_i : r_o;
+        this.pe_mean = (r_i < r_o) ? r_i : r_o;
+        this.sma_mean = (this.ap_mean + this.pe_mean)/2
+        
+        var sma_actual = this.sma_mean / scaleFactor;
+        
+        this.TOF_mean = pi * Math.sqrt(sma_actual**3/mu_sun);
+        
+    }
+    
+    update(t){
+        
+        var Ln = this.originPlanet.LnAtTimeT(t);
+        
+        var r_i = this.originPlanet.rAtLn(Ln);
+        var r_o = this.destinationPlanet.rAtLn(Ln+pi);
+        
+        this.ap = (r_i > r_o) ? r_i : r_o;
+        this.pe = (r_i < r_o) ? r_i : r_o;
+        
+        this.sma = (r_i + r_o)/2;
+        var sma_actual = this.sma/scaleFactor;
+        this.TOF = pi * Math.sqrt(sma_actual**3/mu_sun);
+    }
+}
+             
 class TransferWindow{
      
     constructor(originPlanet, destinationPlanet){
