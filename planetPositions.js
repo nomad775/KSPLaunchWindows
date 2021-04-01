@@ -1,8 +1,12 @@
-var r = 10;
+var r = 20;
 
 var originPlanet;
 var destinationPlanet;
 var txOrbit;
+
+var timer;
+var inMotion;
+var showMean;
 
 function scalePlanets(planet1, planet2){
 
@@ -24,8 +28,13 @@ function scalePlanets(planet1, planet2){
 
 function drawOrbits(){
 
-    originPlanet = planets[4];
-    destinationPlanet = planets[3];
+    params = new URLSearchParams(location.search);
+    var origin = params.get("originPlanet");
+    var destination = params.get("destinationPlanet");
+    
+    originPlanet = planets[origin];
+    destinationPlanet = planets[destination];
+    
     scalePlanets(originPlanet, destinationPlanet);
     
     txOrbit = new TransferOrbit(originPlanet, destinationPlanet);
@@ -56,6 +65,8 @@ function drawOrbits(){
 
     drawOrbit(destinationPlanet);
     updatePosition(destinationPlanet, 0);
+    
+    updateTime()
 }
 
 function drawOrbit(planet){
@@ -82,10 +93,49 @@ function drawOrbit(planet){
 
 }
 
+function toggleAnim(delay,delta){
+    if (inMotion){
+        clearInterval(timer);
+    }
+    else
+    {
+        timer = setInterval(deltaT,delay,delta);
+    }
+    inMotion=!inMotion;
+}
+
+function deltaT(delta){
+    
+    d = Number($("input[name='day']").val());
+    d += Number(delta);
+    $("input[name='day']").val(d);
+    
+    updateTime();
+}
+
 function updateTime(){
+    
     var y = $("input[name='year']").val()-1;
     var d = $("input[name='day']").val()-1;
 
+    var t = validateTime(y, d);
+    
+    updatePosition(originPlanet, t);
+    updatePosition(destinationPlanet, t);
+    
+    txOrbit.update(t);
+    var tdest_mean = t + txOrbit.TOF_mean;
+    var tdest_actual = t + txOrbit.TOF;
+    
+    //updateMeanTransferOrbit(t);
+    updateTransferOrbit();
+    updateDestinationPlanet_future(tdest_mean, tdest_actual);
+    updateTables(t);
+   
+}
+
+function validateTime(y, d){
+    
     /*if(d<0){
         if(y==0){
             $("input[name='year']").val(1);
@@ -113,35 +163,8 @@ function updateTime(){
         $("input[name='day']").val(d);
     }
     */
-    var t = convertDateToSeconds(y,d,0,0);
-
-    updatePosition(originPlanet, t);
-    updatePosition(destinationPlanet, t);
     
-    updateTransferOrbit(t);
-    
-    txOrbit.update(t);
-    var tdest_mean = t + txOrbit.TOF_mean;
-    var tdest_actual = t + txOrbit.TOF;
-    
-    updateDestinationPlanet_future(tdest_mean, tdest_actual);
-
-   /* var LnMean_i = (innerPlanet.MeanLnAtTimeT(t)*180/pi).toFixed(2);
-    var Ln_i = -(innerPlanet.LnAtTimeT(t) * 180/pi).toFixed(2);
-
-    var LnMean_o = (destinationPlanet.MeanLnAtTimeT(t)*180/pi).toFixed(2);
-    var Ln_o = -(destinationPlanet.LnAtTimeT(t)*180/pi).toFixed(2);
-
-    var phi_mean = LnMean_o - LnMean_i;
-    var phi = Ln_o-Ln_i;
-
-    $("#innerPlanetData td:eq(1)").text(LnMean_i);
-    $("#innerPlanetData td:eq(2)").text(Ln_i);
-    $("#innerPlanetData td:eq(3)").text(LnMean_i-Ln_i);
-
-    $("#destinationPlanetData td:eq(1)").text(LnMean_o);
-    $("#destinationPlanetData td:eq(2)").text(Ln_o);
-    $("#destinationPlanetData td:eq(3)").text(LnMean_o-Ln_o);*/
+    return convertDateToSeconds(y,d,0,0);
 }
 
 function updatePosition(planet, t){
@@ -166,7 +189,7 @@ function updatePosition(planet, t){
 
 }
 
-function updateTransferOrbit(t){
+function updateMeanTransferOrbit(t){
 
     var r_i = originPlanet.sma;
     var Ln_i = originPlanet.MeanLnAtTimeT(t)
@@ -194,7 +217,39 @@ function updateTransferOrbit(t){
     $("#line1").attr("y2", y_meanC_o);
 
     $("#line1").attr("stroke", "black");
+    
+}
 
+function updateTransferOrbit(){
+    
+    var data = "M ox oy A rx ry ang 0 0 dx dy A rx ry ang 0 0 ox oy"
+    
+    var ox = txOrbit.ro * Math.cos(txOrbit.Ln_o);
+    var oy = -txOrbit.ro * Math.sin(txOrbit.Ln_o);
+    var ang = -txOrbit.Ln_d * 180/pi;
+    var rx = txOrbit.a;
+    var ry = txOrbit.b;
+    var dx = txOrbit.rd * Math.cos(txOrbit.Ln_d);
+    var dy = -txOrbit.rd * Math.sin(txOrbit.Ln_d);
+    
+    data = data.replaceAll("ox", ox);
+    data = data.replaceAll("oy", oy);
+    data = data.replaceAll("ang", ang)
+    data = data.replaceAll("rx", rx);
+    data = data.replaceAll("ry", ry);
+    data = data.replaceAll("dx", dx);
+    data = data.replaceAll("dy", dy);
+    
+    $("#txOrbit").attr("d", data);
+    
+     // transfer line
+    $("#line1").attr("x1", ox);
+    $("#line1").attr("y1", oy);
+
+    $("#line1").attr("x2", dx);
+    $("#line1").attr("y2", dy);
+
+    $("#line1").attr("stroke", "gray");
 }
 
 function updateDestinationPlanet_future(t_mean, t_actual){
@@ -205,14 +260,15 @@ function updateDestinationPlanet_future(t_mean, t_actual){
     $("#circle2").attr("cx", cx_meanC);
     $("#circle2").attr("cy", cy_meanC);
     $("#circle2").attr("stroke", "fuchsia");
+    $("#circle2").hide();
     
-    var cx_meanE = destinationPlanet.meanPosition(t_actual).x - destinationPlanet.cx;
+   /* var cx_meanE = destinationPlanet.meanPosition(t_actual).x - destinationPlanet.cx;
     var cy_meanE = -destinationPlanet.meanPosition(t_actual).y+destinationPlanet.cy;
 
     $("#circle3").attr("cx", cx_meanE);
     $("#circle3").attr("cy", cy_meanE);
     $("#circle3").attr("stroke", "cyan");
-
+*/
     
     var cx_ellip = destinationPlanet.truePosition(t_actual).x;
     var cy_ellip = -destinationPlanet.truePosition(t_actual).y;
@@ -220,6 +276,115 @@ function updateDestinationPlanet_future(t_mean, t_actual){
     $("#circle4").attr("cx", cx_ellip);
     $("#circle4").attr("cy", cy_ellip);
     $("#circle4").attr("stroke", "purple");
+    
+    
+}
+
+function updateTables(t){
+    
+    var planet = originPlanet;
+    var name = planet.name;
+    var sma = (planet.sma/planet.scaleFactor/1e9).toFixed(4);
+    var ecc = planet.ecc;
+    var r_mean = sma;
+    var Ln_mean = (planet.MeanLnAtTimeT(t) * 180/pi).toFixed(1);
+    
+    var Ln = planet.LnAtTimeT(t);
+    var r = (planet.rAtLn(Ln)/planet.scaleFactor/1e9).toFixed(4);
+    
+    var Ln_deg = (Ln*180/pi).toFixed(1);
+    
+    var d_r = (r_mean - r).toFixed(4);
+    var d_Ln = (Ln_mean - Ln_deg).toFixed(1);
+    
+    
+    $("#originPlanetData p").eq(1).text(name);
+    
+    var rows = $("#originPlanetData tr");
+    
+    rows.eq(0).children("td").eq(1).text(sma);
+    rows.eq(1).children("td").eq(1).text(ecc);
+    rows.eq(2).children("td").eq(1).text(r_mean);
+    rows.eq(3).children("td").eq(1).text(Ln_mean);
+    rows.eq(4).children("td").eq(1).text(r);
+    rows.eq(5).children("td").eq(1).text(Ln_deg);
+    rows.eq(6).children("td").eq(1).text(d_r);
+    rows.eq(7).children("td").eq(1).text(d_Ln);
+    
+    
+    planet = destinationPlanet;
+    
+    name = planet.name;
+    sma = (planet.sma/planet.scaleFactor/1e9).toFixed(4);
+    ecc = planet.ecc;
+    r_mean = sma;
+    Ln_mean = (planet.MeanLnAtTimeT(t) * 180/pi).toFixed(1);
+    
+    Ln = planet.LnAtTimeT(t);
+    r = (planet.rAtLn(Ln)/planet.scaleFactor/1e9).toFixed(4);
+    
+    Ln_deg = (Ln*180/pi).toFixed(3);
+    d_r = (r_mean - r).toFixed(4);
+    d_Ln = (Ln_mean - Ln_deg).toFixed(1);
+    
+    
+    $("#destinationPlanetData p").eq(1).text(name);
+    
+    var rows = $("#destinationPlanetData tr");
+    
+    rows.eq(0).children("td").eq(1).text(sma);
+    rows.eq(1).children("td").eq(1).text(ecc);
+    rows.eq(2).children("td").eq(1).text(r_mean);
+    rows.eq(3).children("td").eq(1).text(Ln_mean);
+    rows.eq(4).children("td").eq(1).text(r);
+    rows.eq(5).children("td").eq(1).text(Ln_deg);
+    rows.eq(6).children("td").eq(1).text(d_r);
+    rows.eq(7).children("td").eq(1).text(d_Ln);
+    
+    var rows =$("#txOrbitData tr");
+    
+    var pe_mean = (txOrbit.pe_mean/txOrbit.scaleFactor/1e9).toFixed(4);
+    var ap_mean = (txOrbit.ap_mean/txOrbit.scaleFactor/1e9).toFixed(4);
+    var Ln_mean = (txOrbit.Ln_rdv_mean * 180/pi).toFixed(1);
+    var TOF_mean = (txOrbit.TOF_mean/secondsPerDay).toFixed(1);
+    
+    var sma = (txOrbit.a/txOrbit.scaleFactor/1e9).toFixed(4);
+    var Ln = (modRev(txOrbit.Ln_d, 4)*180/pi).toFixed(1);
+    var tof = txOrbit.TOF
+    var Ln_dest_rdv = (planet.LnAtTimeT(t+tof)*180/pi).toFixed(1);
+    
+    tof = (tof/secondsPerDay).toFixed(1);
+    var phaseAngle = destinationPlanet.LnAtTimeT(t)-originPlanet.LnAtTimeT(t);
+    phaseAngle = (phaseAngle * 180/pi).toFixed(1);
+    var deltaLn = (Ln-Ln_dest_rdv).toFixed(2);
+    
+    rows.eq(0).children("td").eq(1).text(pe_mean);
+    rows.eq(1).children("td").eq(1).text(ap_mean);
+    rows.eq(2).children("td").eq(1).text(Ln_mean);
+    rows.eq(3).children("td").eq(1).text(TOF_mean);
+    
+    rows.eq(4).children("td").eq(1).text(sma);
+    rows.eq(5).children("td").eq(1).text(Ln);
+    rows.eq(6).children("td").eq(1).text(tof);
+    rows.eq(7).children("td").eq(1).text(Ln_dest_rdv);
+    rows.eq(8).children("td").eq(1).text(deltaLn);
+}
+
+function calcEject(){
+    var park={r:80000, v:2810}
+    var eject = EjectionOrbit(txOrbit,park)
+    var dv = eject.deltaV;
+    var theta=eject.ejectionAngle;
+    
+    var ejectAngleStr = "<p>ejection angle: 1</p>".replace("1", theta);
+    var dvStr = "<p>delta V: 1</p>".replace("1", dv);
+    
+    $("#ejectionOutput").html(ejectAngleStr).after(dvStr);
+    //$("#ejectionOutput").html(dvStr);
+}
+
+function toggleMean(){
+    $(".mean").toggle();   
 }
 
 $(document).ready(function(){

@@ -8,7 +8,7 @@ const secondsPerHour = 60 * secondsPerMinute;
 const secondsPerDay = 6 * secondsPerHour;
 const secondsPerYear = 426 * secondsPerDay;
 
-var planets = [];
+var planets = {};
 var transferWindows = [];
 
 var currentTime;
@@ -45,6 +45,15 @@ function convertDateToSeconds(year, day, hour, minute){
     return seconds;
 }
 
+function modRev(angle, places){
+    var a = (angle * 10**places).toFixed(0);
+    var rev = ((2*pi)*10**places).toFixed(0);
+    var rem = a % rev;
+    rem = rem/(10**places);
+    if(rem<0) rem+=2*pi;
+    
+    return rem;
+}
 
 class Planet{
     
@@ -109,9 +118,9 @@ class Planet{
         
         // true anomaly
         var theta = 2*Math.atan(Math.sqrt((1+this.ecc)/(1-this.ecc))*Math.tan(E/2))
-        theta = theta % (2*pi);
+        //theta = theta % (2*pi);
         
-        return theta;
+        return modRev(theta, 4);
         
     }
     
@@ -120,7 +129,7 @@ class Planet{
         var M = percent * 2*pi + this.mean0;
         var Ln = M + this.LnPe;
         
-        return Ln % (2*pi);
+        return modRev(Ln, 4);
     }
     
     LnAtTimeT(t){
@@ -128,14 +137,13 @@ class Planet{
         var percent = t/this.period;
         
         //mean anomaly relative to Pe
-        var M = percent * 2*pi;
-        
-        M=M+this.mean0;
+        var M = percent * 2*pi + this.mean0;
         
         // true anomaly
         var theta = this.trueAnomaly(M);
+        var Ln = this.LnPe + theta
         
-        return (this.LnPe + theta) % (2*pi)
+        return modRev(Ln, 4);
     }
 
     rAtLn(Ln){
@@ -183,6 +191,7 @@ class TransferOrbit{
         
         this.ap_mean = (r_i > r_o) ? r_i : r_o;
         this.pe_mean = (r_i < r_o) ? r_i : r_o;
+        
         this.sma_mean = (this.ap_mean + this.pe_mean)/2
         
         var sma_actual = this.sma_mean / scaleFactor;
@@ -193,20 +202,45 @@ class TransferOrbit{
     
     update(t){
         
-        var Ln = this.originPlanet.LnAtTimeT(t);
+        this.Ln_rdv_mean = (this.originPlanet.MeanLnAtTimeT(t) + pi) % (2*pi);
         
-        var r_i = this.originPlanet.rAtLn(Ln);
-        var r_o = this.destinationPlanet.rAtLn(Ln+pi);
+        this.Ln_o = this.originPlanet.LnAtTimeT(t);
+        this.Ln_d = this.Ln_o - pi;
         
-        this.ap = (r_i > r_o) ? r_i : r_o;
-        this.pe = (r_i < r_o) ? r_i : r_o;
+        this.ro = this.originPlanet.rAtLn(this.Ln_o);
+        this.rd = this.destinationPlanet.rAtLn(this.Ln_d);
         
-        this.sma = (r_i + r_o)/2;
-        var sma_actual = this.sma/scaleFactor;
+        /*this.ap = (ro > rd) ? ro : rd;
+        this.pe = (ro < rd) ? ro : rd;*/
+        
+        this.a = (this.ro + this.rd)/2;
+        this.b = Math.sqrt(this.ro * this.rd);
+        
+        var sma_actual = this.a/scaleFactor;
         this.TOF = pi * Math.sqrt(sma_actual**3/mu_sun);
+
+        this.v_depart = Math.sqrt(mu_sun*(2/this.ro-2/(this.ro+this.rd) ) );
+        this.v_origin = Math.sqrt(mu_sun/this.ro);
+
     }
 }
-             
+
+function EjectionOrbit(txOribt, parkingOrbit){
+
+    var v_ship_soi = txOrbit.v_depart-txOrbit.v_origin;
+    var soi = txOrbit.originPlanet.soi;
+    var mu = txOrbit.originPlanet.mu;
+    var a = Math.abs(1/(2/soi-v_ship_soi**2/mu));
+    var v_ship_eject = Math.sqrt(mu*(2/parkingOrbit.r + 1/a));
+
+    var deltaV = v_ship_eject - parkingOrbit.v;
+
+    var theta = Math.acos(a/(a+parkingOrbit.r));
+    var ejectionAngle = 2*pi - theta;
+
+    return {deltaV: deltaV, ejectionAngle: ejectionAngle};
+}
+
 class TransferWindow{
      
     constructor(originPlanet, destinationPlanet){
@@ -325,7 +359,9 @@ function createPlanetObject(){
     var LnPe = (argPe + LAN) * pi/180;
     LnPe %= (2*pi);
     planet = new Planet(name, sma, ecc, LnPe, theta0, mu, soi);
-    planets.push(planet);
+    
+    planets[name] = planet;
+    //planets.push(planet);
     
     index = planets.length-1;
    

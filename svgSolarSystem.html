@@ -1,0 +1,170 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            #viewer{
+                width: 50%;
+                border-width: 10px;
+                border-color: red;
+                background-color: black;
+                margin: 10;
+            }
+            .orbit{
+                fill:none;
+                opacity: 1;
+                
+                /*color: aqua;
+                color:darkgreen;
+                color: darkcyan;
+                color:forestgreen;
+                color: greenyellow;
+                color: lawngreen;*/
+                
+            }
+            svg{background-color: #131339}
+            
+        </style>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            
+            var originPlanet;
+            var destinationPlanet;
+            var i=0;
+            
+            function zoomSVG(){
+               
+                var zoom = document.forms["settings"]["zoomSlider"].value;
+                var planetbox = [" -53.5 -42.1 105.2 105.2 "," -99.3 -98.1 196.7 196.7 "," -136 -136 272 272 "," -199.7 -199.9 414.5 414.6 "," -466.7 -398.1 816.8 816.8 "," -708.9 -660.6 1375.5 1375.4 "," -1051.8 -1080.7 1802.4 1802.4 "]
+                
+                var rScale = [7,4,3,2,1,1,.8];
+                
+                var attr=document.getElementById("solarSystem").attributes.getNamedItem("viewBox");
+                attr.nodeValue = planetbox[zoom];
+                
+                var r = 12 / rScale[zoom];
+                console.log(r);
+                
+                document.querySelectorAll(".planet").forEach( 
+                    function(item, index){
+                        var radius = item.attributes.getNamedItem("r");
+                        radius.nodeValue=r; //25/zoom;
+                        console.log("R:" + r);
+                    }
+                )
+                
+            }
+            
+            $(document).ready(function(){
+                
+                
+                $(".planet").click(function(){
+                
+                    i++;
+                    var name = $(this).attr("id");
+                    
+                    if(i==1){
+                        originPlanet = name
+                        $("#originCard p").text(name);
+                    } else{
+                        
+                        destinationPlanet=name;
+                        qryStr = "?originPlanet={1}&destinationPlanet={2}".replace("{1}", originPlanet)
+                        qryStr = qryStr.replace("{2}", destinationPlanet);
+                        location = "transferPosition.html" + qryStr;
+                    } 
+                    
+                    console.log(i, originPlanet, destinationPlanet);
+                } )
+          })
+            
+        </script>
+        
+    </head>
+    
+    <div id="settings">
+        <h1>KSP Solar System</h1>
+        <form name="settings">
+            <input name="year" type="number" min="1" max="100" value="1"/>
+            <input name="day"  type="number" min="1" max="426" value="1"/>
+            <br>
+            <input name="zoomSlider" type="range" min="0" max="6" value="6" onchange="zoomSVG()"/>
+        </form>
+    </div>
+    <div>
+        <div id="originCard" height="100" width="200"><p>Origin</p></div>
+        to
+        <div id="destinationCard" height="100" width="200"><p>Destination</p></div>
+    </div>
+    <div id="viewer" width="800" margin-left="auto">
+        
+        <svg id="solarSystem" height="800" width="800" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                  
+            <circle id="sun" cx="0" cy="0" r="2.5" fill="yellow" stroke="orange" stroke-width="1"/>
+            
+            <!-- arc path rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
+            <!-- M ap.x, ap.y 
+                 A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
+            <!-- M pe.x pe.y
+                 A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
+                
+            <path class="orbit" id="mohoOrbit"   d="M -5.50 62.92     A 52.63   51.57  -265    0 0  3.67 -41.95    
+                                                    A 52.63   51.57  -265    0 0   -5.5   62.92 " stroke="peachpuff"/>
+            <path class="orbit" id="eveOrbit"    d="M -95.93 25.70    A 98.33   98.32  -195    0 0 94.02 -25.19    
+                                                    A 98.33   98.32  -195    0 0  -95.93  25.7 " stroke="purple"/>
+            <path class="orbit" id="kerbinOrbit" d="M -136.00 .00     A 136.00 136.00  -180    0 0 136 0           
+                                                    A 136.00 136.00  -180    0 0 -136      0 " stroke="cyan"/>
+            <path class="orbit" id="dunaOrbit"   d="M  155.37 152.68  A 207.26 207.00  -315.5  0 0 -140.3 -137.87  
+                                                    A 207.26 207.00  -315.5  0 0  155.37 152.68 " stroke="red"/>
+            <path class="orbit" id="dresOrbit"   d="M -460.51 81.20   A 408.39 404.08  -190    0 0 343.88 -60.63   
+                                                    A 408.39 404.08  -190    0 0 -460.51  81.2 " stroke="chocolate"/>
+            <path class="orbit" id="joolOrbit"   d="M 348.91 -552.57  A 687.74 686.87 232      0 0 -444.58 569.04  
+                                                    A 687.74 686.87 232      0 0  348.91 -552.57 " stroke="green"/>
+            <path class="orbit" id="eelooOrbit"  d="M -729.89 -869.84 A 901.19 870.20  -130    0 0 428.66 510.86   
+                                                    A 901.19 870.20  -130    0 0 -729.89 -869.84 " stroke="gray"/>
+
+            <circle class="planet" id="Moho"   cx="-5.50"   cy="62.92"   r="18" fill="peachpuff"/>
+            <circle class="planet" id="Eve"    cx="-95.93"  cy="25.70"   r="18" fill="purple"/>
+            <circle class="planet" id="Kerbin" cx="-136.00" cy="0"       r="18" fill="cyan"/>
+            <circle class="planet" id="Duna"   cx= "155.37" cy="152.68"  r="18" fill="crimson"/>
+            <circle class="planet" id="Dres"   cx="-460.51" cy="81.20"   r="18" fill="#a44128"/>
+            <circle class="planet" id="Jool"   cx= "348.92" cy="-552.57" r="18" fill="green" />
+            <circle class="planet" id="Eeloo"  cx="-729.89" cy="-869.84" r="18" fill="gray"/>
+            
+            
+            <!-- com circles 
+            <circle cx=0 cy=0 r=80 fill="none" stroke="yellow"/>
+            <circle cx=56.6 cy=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cy=56.6 cx=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cy=-56.6 cx=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cx=-56.6 cy=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            
+            <circle cx=56.6 cy=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cy=56.6 cx=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cy=-56.6 cx=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            <circle cx=-56.6 cy=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+            -->
+            <!--
+            <animateMotion xlink:href="#moho" dur="14.44s" repeatCount="indefinite"> <mpath xlink:href="#mohoOrbit"/>   </animateMotion>
+            <animateMotion xlink:href="#eve" dur="36.87s" repeatCount="indefinite">   <mpath xlink:href="#eveOrbit"/>    </animateMotion>
+            <animateMotion xlink:href="#kerbin" dur="60s" repeatCount="indefinite">  <mpath xlink:href="#kerbinOrbit"/> </animateMotion>
+            <animateMotion xlink:href="#duna" dur="112.88s" repeatCount="indefinite"> <mpath xlink:href="#dunaOrbit"/>   </animateMotion>
+            <animateMotion xlink:href="#dres" dur="312.23" repeatCount="indefinite">  <mpath xlink:href="#dresOrbit"/>   </animateMotion>
+            <animateMotion xlink:href="#jool" dur="682.31s" repeatCount="indefinite"> <mpath xlink:href="#joolOrbit"/>   </animateMotion>
+            <animateMotion xlink:href="#eeloo" dur="1023s" repeatCount="indefinite">  <mpath xlink:href="#eelooOrbit"/>  </animateMotion>
+            -->
+            
+            <!-- mean orbit -->
+            
+           <!-- 
+            <circle id="mohoSMA" cx="0" cy="0" r="52.63" fill=none stroke="white"/>
+            <circle id="eveSMA" cx="0" cy="0" r="98.33" fill=none stroke="white"/>
+            <circle id="dunaSMA" cx="0" cy="0" r="207.26" fill=none stroke="white"/>
+            <circle id="dresSMA" cx="0" cy="0" r="408.84" fill=none stroke="white"/>
+            <circle id="joolSMA" cx="0" cy="0" r="687.74" fill=none stroke="white"/>
+            <circle id="eelooSMA" cx="0" cy="0" r="901.19" fill=none stroke="white"/>
+            -->
+            
+        </svg>
+    </div>
+</html>

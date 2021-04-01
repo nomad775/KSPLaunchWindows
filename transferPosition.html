@@ -1,20 +1,51 @@
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         
         <style>
             #viewer{
-                width: 50%;
-                border-width: 10px;
+                border-width: 3px;
                 border-color: red;
-                background-color: none;
-                margin: 10;
+/*                border-style: solid;*/
             }
             
-            .button{
-                font-size: 24pt;
-                color:fuchsia;
+            #dataTables{
+                width: 360px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-evenly;
             }
+            
+            .dataDiv{
+                width: 150px;
+                box-shadow: 5px 5px 10px -5px grey, -1px -1px 6px -3px lightblue;
+            }
+            
+            .dataDiv p{
+                text-align: center;
+            }
+            
+            .dataTable td:first-child{
+                font-size: 10pt;
+                color: blue;
+                width: 70px;
+            }
+            
+            div#controls{
+                font-size: .75cm;
+                user-select: none;
+                height: 1.5cm;
+                padding-top: .25cm;
+                
+            }
+            
+            div#controls i{
+                user-select: none;
+                width: .75cm;
+            }
+            
             
         </style>
         
@@ -23,22 +54,10 @@
         <script src="planetPositions.js"></script>
         
     </head>
-    
-    <div id="settings">
-        
-        <form name="settings">
-            <input name="year" type="number" value="1" onchange="updateTime()"/>
-            <input name="day" type="number" value="1" onchange="updateTime()"/>
-            <br>
-            
-        </form>
-        
-        <p>Current Time : <span id="currentTime">00:00</span></p>
-    </div>
-        
+     
     <div id="viewer">
         
-        <svg id="solarSystem" height="500" width="500" viewBox="-250 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <svg id="transferORbit" height="360" width="360" viewBox="-240 -200  450 410" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             
             <!-- SUN -->
             <circle cx="0" cy="0" r="10" stroke="orange" fill="yellow"/>
@@ -46,7 +65,7 @@
             <!--  ORBITS -->
             <g id="ellipticalGroup_i">
                 <ellipse id="orbit_i" cx="0" cy="0" rx="136" ry="136" stroke="cyan" fill="none"/>
-                <circle id="orbit_meanEccentric_i" cx="0" cy="0" r="136" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
+                <circle class="mean" id="orbit_meanEccentric_i" cx="0" cy="0" r="136" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
                 <line x1="-5" y1="0" x2="5" y1=0 stroke="cyan"/>
                 <line xy="0" y1="-5" x2="0" y2="5" stroke="cyan"/>
                 <circle id="focus_i" class="focusPoint" cx="12" cy="0" r="3" stroke="cyan"/>
@@ -54,7 +73,7 @@
             
             <g id="ellipticalGroup_o">
                 <ellipse id="orbit_o" cx="0" cy="0" rx="207.26" ry="207" stroke="red" fill="none"/>
-                <circle id="orbit_meanEccentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
+                <circle class="mean" id="orbit_meanEccentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="gray" stroke-width="1" stroke-dashArray="5,3"/>
                 <line x1="-5" y1="0" x2="5" y1=0 stroke="blue"/>
                 <line xy="0" y1="-5" x2="0" y2="5" stroke="blue"/>
                 <circle id="focus_o" class="focusPoint" cx="12" cy="0" r="3" stroke=black/>
@@ -62,44 +81,111 @@
             
              <!-- MEAN ORBITs -->
             
-            <circle id="orbit_meanConcentric_i" cx="0" cy="0" r="13.6" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
-            <circle id="orbit_meanConcentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
+            <circle class="mean" id="orbit_meanConcentric_i" cx="0" cy="0" r="13.6" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
+            <circle class="mean" id="orbit_meanConcentric_o" cx="0" cy="0" r="207.26" fill="none" stroke="lightBlue" stroke-width="1" stroke-dashArray="5,3"/>
             
             <!-- PLANETS -->
                 <!-- inner -->
             <circle id="planet_i" cx="155.37" cy="152.68" r="10" fill="crimson" stroke = "black"/> 
-            <circle id="planet_meanConcentric_i" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
-            <circle id="planet_meanEccentric_i" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"//>            
+            <circle class="mean" id="planet_meanConcentric_i" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
+            <circle class="mean" id="planet_meanEccentric_i" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"//>            
             
                 <!-- outer -->
             <circle id="planet_o" cx="155.37" cy="152.68" r="10" fill="crimson" stroke = "black"/>
-            <circle id="planet_meanConcentric_o" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
-            <circle id="planet_meanEccentric_o" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
+            <circle class="mean" id="planet_meanConcentric_o" cx="147.83" cy="145.27" r="10" fill="none" transparency=".3" stroke="green"/>
+            <circle class="mean" id="planet_meanEccentric_o" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
             
             
             <!-- DECORATIONS -->
             
             <line id="line1" x1="0" y1="0" x2="120" y2="120"/>
-            <line id="line2" x1="0" y1="0" x2="120" y2="120"/>
-            <line id="line3" x1="0" y1="0" x2="120" y2="120"/>
+            <!--<line id="line2" x1="0" y1="0" x2="120" y2="120"/>
+            <line id="line3" x1="0" y1="0" x2="120" y2="120"/>-->
             
             <circle id="circle1" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
             <circle id="circle2" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/> 
             <circle id="circle3" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/>
             <circle id="circle4" cx="155.37" cy="152.68" r="10" fill="none" stroke = "black"/> 
             
-            <ellipse cx="0" cy="0" rx="0" ry="0" stroke-dashArray=""5,3""/>
+<!--            <ellipse cx="0" cy="0" rx="0" ry="0" stroke-dashArray=""5,3""/>-->
+            
+            <path id="txOrbit"  stroke="gray" fill="none"/>
+            
             
         </svg>
     </div>
-    <div>
-        <p id="innerPlanetStats"></p>
-        <p id="outerPlanetStats"></p>
-        <table>
-            <tr><th></th><th>mean</th><th>true</th><th>delta</th><th>delta</th></tr>
-            <tr id="innerPlanetData"><td>inner</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
-            <tr id="outerPlanetData"><td>outer</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
-            <tr><td>phase</td><td>0.0</td><td>0.0</td><td>0.0</td><td>--</td></tr>
-        </table>
+    
+    <div id="controls">
+        <i class="fa fa-angle-double-left" onclick="toggleAnim(25, -1)"></i>
+        <i class="fa fa-angle-left" onclick="toggleAnim(100, -.5)"></i>
+        <i class="fa fa-minus-circle" onclick="deltaT(-1)"></i>
+        
+        <input name="year" type="number" value="1" max=900 min=1 onchange="updateTime()"/>
+        
+        <input name="day" type="number" value="1" max=426 min=1 onchange="updateTime()"/>
+        <i class="fa fa-plus-circle" onclick="deltaT(1)"></i>
+        <i class="fa fa-angle-right" onclick="toggleAnim(100,.5)"></i>
+        <i class="fa fa-angle-double-right" onclick="toggleAnim(25, 1)"></i>
     </div>
+    
+    
+    <div id="dataTables">
+        
+        <div id="originPlanetData" class="dataDiv">
+            <p>Origin Planet</p>
+            <p>Origin</p>
+            <table class="dataTable">
+                <tr><td>SMA</td><td>13.6</td></tr>
+                <tr><td>ecc</td><td>0</td></tr>
+                <tr><td>r_mean</td><td>0</td></tr>
+                <tr><td>Ln_mean</td><td>0</td></tr>
+                <tr><td>r</td><td>13.6</td></tr>
+                <tr><td>Ln</td><td>0</td></tr>
+                <tr><td>delta r</td><td>0</td></tr>
+                <tr><td>delta Ln</td><td>0</td></tr>
+            </table>
+        </div>
+            
+        <div id="destinationPlanetData" class="dataDiv">
+            <p>Destination Planet</p>
+            <p>Destination</p>
+            <table class="dataTable">
+                <tr><td>SMA</td><td>13.6</td></tr>
+                <tr><td>ecc</td><td>0</td></tr>
+                <tr><td>r</td><td>13.6</td></tr>
+                <tr><td>Ln_mean</td><td>0</td></tr>
+                <tr><td>r</td><td>13.6</td></tr>
+                <tr><td>Ln</td><td>0</td></tr>
+                <tr><td>delta r</td><td>0</td></tr>
+                <tr><td>delta Ln</td><td>0</td></tr>
+            </table>
+        </div>
+        
+        <div id="txOrbitData" class="dataDiv">
+            <p>Transfer Orbit</p>
+            <table class="dataTable">
+                <tr><td>Pe_mean</td><td>13.6</td></tr>
+                <tr><td>Ap_mean</td><td>0</td></tr>
+                <tr><td>Ln_rdv</td><td>13.6</td></tr>
+                <tr><td>TOF_mean</td><td>0</td></tr>
+                <tr><td>SMA</td><td>0</td></tr>
+                <tr><td>Ln_rdv</td><td>0</td></tr>
+                <tr><td>TOF</td><td>0</td></tr>
+                <tr><td>Ln_planet</td><td>0</td></tr>
+                <tr><td>Delta Ln</td><td>0</td></tr>
+            </table>
+        </div>
+    </div>
+    
+    <div id="settings">
+        <form>
+            Show mean
+            <input name="showMean" type="checkbox" onchange="toggleMean()"/>
+            <button name="calc" type="button" onclick="calcEject()">Calc Eject</button>
+        </form>
+    </div>
+    
+    <div id="ejectionOutput">
+    </div>
+    
 </html>
