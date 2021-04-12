@@ -25,8 +25,16 @@
     </style>
 </head>
     <body>
-       <h1>Orbit Equations</h1> 
-        <h2>Uniform circular motion</h2>
+       <h1>Orbit Equations</h1>
+        <p>Orbital period \( T = 2 \pi \sqrt{\frac{a^3}{\mu}}\)</p>
+        <p>Vis-viva \(v_r = \sqrt{ \mu \left( \frac{2}{r}-\frac{1}{a} \right) }\) can also be used to find \(a\) when \(v_r\) and \(r\) are known, \(a=\frac{1}{\frac{2}{r}-\frac{v^2}{\mu} }\)</p>
+        <p>Radius at true anomaly \( r=\frac{p}{1+e\cos{\theta}} = \frac{a(1-{e}^2)}{1+e\cos{\theta}} \)</p>
+        
+        <h1>Maneauvers</h1>
+        <p>Raise Orbit </p>
+        <p>Inclination change \(\Delta v = 2v\sin{\frac{\theta}{2}} \)</p>
+        
+        <!--<h2>Uniform circular motion</h2>
         <p>$$v= \sqrt{\frac{GM}{2}} = \sqrt{\frac{\mu}{r^2}} $$</p>
         <p>From balance of forces</p>
         <p>$$\frac{2GMm}{(R+r)^2} = m\omega^2r \approx GM = \omega^3r^3$$</p>
@@ -35,28 +43,33 @@
         <p>$$P = 2\pi\sqrt{\frac{a^3}{\mu}}$$</p>
         <p>At Ap and Pe flight angle is zero so </p>
         <p>$$r_pv_p = r_av_a$$</p>
-        <p>at other locations $$v\sin{\gamma} = \omega r^2$$ where \(\gamma\) is the zeineth angle</p>
+        <p>at other locations $$v\sin{\gamma} = \omega r^2$$ where \(\gamma\) is the zeineth angle</p>-->
         
-        <h2>From Conservation of Engergy</h2>
+        <!--<h2>From Conservation of Engergy</h2>
         <p>Velcoity and radius at Ap and Pe</p>
         <p>\[ v_p = \sqrt{\frac{2\mu r_a}{r_p(r_a+r_p)}}\]</p>
         <p>\[ v_a = \sqrt{\frac{2\mu r_p}{r_a(r_a+r_p)}}\]</p>
         <p>\[ r_a = \frac{r_p}{(\frac{2\mu}{r_p v_p^2}-1)} \]</p>
-        <p>\[ r_p = \frac{r_a}{(\frac{2\mu}{r_a v_a^2}-1)}\]</p>
+        <p>\[ r_p = \frac{r_a}{(\frac{2\mu}{r_a v_a^2}-1)}\]</p>-->
         
-        <h1>Eccentric Orbits</h1>
+        <h1>Elliptic Orbits</h1>
         <p>Eccencticity can found from \(r_a\) and \(r_p\) or it also be fround directly by</p>
         <p>\[ e = \frac{r_pv^2}{\mu}-1\]</p>
+        
         <p>\[r_p = a(1-e)\]</p>
         <p>\[r_a = a(1+e)\]</p>
-        <p>Taking \(\phi\), the flight angle as \(90-\gamma\) </p>
-        <p>\[e=\sqrt{(\frac{rv^2}{\mu} - 1) \cos^2{\phi} + sin^2{\phi}}\]</p>
         
-        <h2>True Anomaly</h2>
-        <p>\[\tan{\nu} - \frac{ \frac{rv^2}{\mu} \cos{\phi}\sin{\phi}}{\frac{rv^2}{\mu}cos^2{\phi}-1}\]</p>
-        <p>\[a = \frac{1}{\frac{2}{r}-\frac{v^2}{\mu}}\]</p>
+        <p>Equations of ellipse</p>
+        \[\frac{x^2}{a^2}+\frac{y^2}{b^2}=1\]
         
-        <h2>Position in Oribt</h2>
-        <p>M is mean anomaly.</p>
+        \[a = \frac{r_a + r_b}{2}\]
+        \[b = \sqrt{r_a r_b} = a \sqrt{1-e^2}\]
+        \[c=\sqrt{a^2-b^2} = e a\]
+        
+        \[ e = \sqrt{1+\frac{b^2}{a^2} } = \frac{r_a - r_b}{r_a+r_b} = \frac{r_a-r_p}{2a}\]
+        \[\langle a\cos{\theta}, b\sin{\theta}\rangle\]
+        <!--<p>Taking \(\phi\), the flight angle as \(90-\gamma\) </p>
+        <p>\[e=\sqrt{(\frac{rv^2}{\mu} - 1) \cos^2{\phi} + sin^2{\phi}}\]</p>-->
+        
     </body>
 </html>

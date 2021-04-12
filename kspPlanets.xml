@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <planets>
-  <planet name="Moho">
+  <planet name="Moho" color="orange">
     <radius>250000</radius>
     <mu>168609378655</mu>
     <omega>0.00000519</omega>
@@ -19,7 +19,7 @@
       <period>2215754</period>
     </orbit>
   </planet>
-  <planet name="Eve">
+  <planet name="Eve" color="purple">
     <radius>700000</radius>
     <mu>8171730229211</mu>
     <omega>0.00007805</omega>
@@ -61,7 +61,7 @@
       <period>5657995</period>
     </orbit>
   </planet>
-  <planet name="Kerbin">
+  <planet name="Kerbin" color="cyan">
     <radius>600000</radius>
     <mu>3531600000000</mu>
     <omega>0.00029157</omega>
@@ -118,7 +118,7 @@
       <period>9203545</period>
     </orbit>
   </planet>
-  <planet name="Duna">
+  <planet name="Duna" color="red">
     <radius>320000</radius>
     <mu>301363211975</mu>
     <omega>0.00009590</omega>
@@ -156,7 +156,7 @@
       <period>17315400</period>
     </orbit>
   </planet>
-  <planet name="Dres">
+  <planet name="Dres" color="brown">
     <radius>138000</radius>
     <mu>21484488600</mu>
     <omega>0.00018055</omega>
@@ -175,7 +175,7 @@
       <period>47893063</period>
     </orbit>
   </planet>
-  <planet name="Jool">
+  <planet name="Jool" color="green">
     <radius>6000000</radius>
     <mu>282528004209995</mu>
     <omega>0.00017453</omega>
@@ -216,7 +216,7 @@
       <period>104661432</period>
     </orbit>
   </planet>
-  <planet name="Eeloo">
+  <planet name="Eeloo" color="gray">
     <radius>210000</radius>
     <mu>74410814527</mu>
     <omega>0.00032288</omega>

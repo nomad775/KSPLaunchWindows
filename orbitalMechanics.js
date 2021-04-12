@@ -3,47 +3,10 @@
 const pi = Math.atan(1)*4;
 const mu_sun = 1172332800000000000;
 
-const secondsPerMinute = 60;
-const secondsPerHour = 60 * secondsPerMinute;
-const secondsPerDay = 6 * secondsPerHour;
-const secondsPerYear = 426 * secondsPerDay;
-
 var planets = {};
 var transferWindows = [];
 
 var currentTime;
-
-function convertSecondsToDate(seconds){
-
-    var year = Math.trunc(seconds/secondsPerYear);
-    var secondsRemaining = seconds % secondsPerYear;
-    
-    var day = Math.trunc(secondsRemaining/secondsPerDay);
-    secondsRemaining = secondsRemaining % secondsPerDay;
-    
-    var hour = Math.trunc(secondsRemaining / secondsPerHour);
-    secondsRemaining = secondsRemaining % secondsPerHour;
-    
-    var minute = Math.trunc(secondsRemaining / secondsPerMinute);
-    var second = secondsRemaining;
-    
-    //console.log("UT seconds : " + seconds, "  output: y" + year + " d" + day + " T: " + hour + ":" + minute);
-    
-    return year + "y " + day + "d " + hour + ":" + minute;
-}
-
-function convertDateToSeconds(year, day, hour, minute){
-    //var daysPerYear = 426;
-    //var days = year * daysPerYear;
-    //days +=day;
-    
-    var seconds = year * secondsPerYear;
-    seconds+= day * secondsPerDay;
-    seconds += hour * secondsPerHour;
-    seconds += minute * secondsPerMinute;
-    
-    return seconds;
-}
 
 function modRev(angle, places){
     var a = (angle * 10**places).toFixed(0);
@@ -58,10 +21,8 @@ function modRev(angle, places){
 class Planet{
     
     name="theName";
-    
-    scaleFactor=1;
-    
-    #sma = 0;
+
+    sma = 0;
     ecc = 0;
     LnPe = 0;
     mean0 = 0;
@@ -70,23 +31,13 @@ class Planet{
 
     period=0;
     
-    #c = 0;
-    #cx = 0;
-    #cy = 0;
-
-    jqPlanet = "";
-    jqPlanet_meanConcentric = "";
-    jqPlanet_meanEccentric = "";
-    
-    jqOrbit = "";
-    jqOrbit_meanConcentric = "";
-    jqOrbit_meanEccentric = "";
-
-    jqEllipticalGroup = "";
+    c = 0;
+    cx = 0;
+    cy = 0;
 
     constructor(name, sma, ecc, LnPe, mean0, mu, soi){
         this.name = name;
-        this.#sma = sma;
+        this.sma = sma;
         this.ecc = ecc;
         this.LnPe = LnPe;
         this.mean0 = mean0;
@@ -95,18 +46,13 @@ class Planet{
         
         this.period = 2*pi*Math.sqrt(this.sma**3/mu_sun); //secondsPerDay;
         this.theta0 = this.trueAnomaly(mean0);
+        this.Ln0 = this.LnPe + this.theta0;
         
-        this.#c = ecc * sma;
-        this.#cx = this.#c * Math.cos(LnPe);
-        this.#cy = this.#c * Math.sin(LnPe);
+        this.c = ecc * sma;
+        this.cx = this.c * Math.cos(LnPe);
+        this.cy = this.c * Math.sin(LnPe);
     }
 
-    get name(){return this.name};
-    get sma(){return this.#sma * this.scaleFactor};
-    get c(){return this.#c * this.scaleFactor};
-    get cx(){return this.#cx * this.scaleFactor};
-    get cy(){return this.#cy * this.scaleFactor};
-    
     trueAnomaly(M){
         
         // eccentric anomaly
@@ -118,10 +64,8 @@ class Planet{
         
         // true anomaly
         var theta = 2*Math.atan(Math.sqrt((1+this.ecc)/(1-this.ecc))*Math.tan(E/2))
-        //theta = theta % (2*pi);
         
         return modRev(theta, 4);
-        
     }
     
     MeanLnAtTimeT(t){
@@ -147,44 +91,23 @@ class Planet{
     }
 
     rAtLn(Ln){
-        var r = this.#sma * (1 - this.ecc**2 )/(1+this.ecc * Math.cos(Ln-this.LnPe))
-        return r * this.scaleFactor;        
+        var r = this.sma * (1 - this.ecc**2 )/(1+this.ecc * Math.cos(Ln-this.LnPe))
+        return r;        
     }
 
      
     v(r){
         return math.sqrt(mu_sun /r);
     }
-             
-    meanPosition(t){
-        var M = this.MeanLnAtTimeT(t);
-        var x = this.sma * Math.cos(M);
-        var y = this.sma * Math.sin(M);
-        
-        return {x: x, y: y};
-    }
-             
-    truePosition(t){
-        var Ln = this.LnAtTimeT(t);
-        var r = this.rAtLn(Ln);
-        var x = r * Math.cos(Ln);
-        var y = r * Math.sin(Ln);
-        
-        return {x:x, y:y};
-    }
-             
+    
 }
 
 class TransferOrbit{
-    
-    scaleFactor = 1;
-             
+   
     constructor(originPlanet, destinationPlanet){
         
         this.originPlanet = originPlanet;
         this.destinationPlanet = destinationPlanet;
-        
-        this.scaleFactor = this.originPlanet.scaleFactor;
         
         var r_i = this.originPlanet.sma;
         var r_o = this.destinationPlanet.sma;
@@ -194,10 +117,9 @@ class TransferOrbit{
         
         this.sma_mean = (this.ap_mean + this.pe_mean)/2
         
-        var sma_actual = this.sma_mean / scaleFactor;
+        this.TOF_mean = pi * Math.sqrt(this.sma_mean**3/mu_sun);
         
-        this.TOF_mean = pi * Math.sqrt(sma_actual**3/mu_sun);
-        
+        this.update(0)
     }
     
     update(t){
@@ -215,9 +137,8 @@ class TransferOrbit{
         
         this.a = (this.ro + this.rd)/2;
         this.b = Math.sqrt(this.ro * this.rd);
-        
-        var sma_actual = this.a/scaleFactor;
-        this.TOF = pi * Math.sqrt(sma_actual**3/mu_sun);
+       
+        this.TOF = pi * Math.sqrt(this.a**3/mu_sun);
 
         this.v_depart = Math.sqrt(mu_sun*(2/this.ro-2/(this.ro+this.rd) ) );
         this.v_origin = Math.sqrt(mu_sun/this.ro);
@@ -226,17 +147,31 @@ class TransferOrbit{
 }
 
 function EjectionOrbit(txOribt, parkingOrbit){
-
-    var v_ship_soi = txOrbit.v_depart-txOrbit.v_origin;
+    
+    // v0 - velocity of parking orbit
+    // v1 - velocity at Pe, after dV applied, required to obtain v2 at SOI
+    // v2 - velocity at SOI, relative to planet
+    // v3 - velocity just past SOI, relative to sun, required for tx orbit
+    
+    var v3 = txOribt.v_depart;
+    var v2 = v3-txOrbit.v_origin;
+    
+    // calculate sma of hyperbolic orbit
+    // using v_r = sqrt(mu * (2/r - 1/a)) for r=SOI
+    // v_r is the known required velocity for the transfer orbit
+    // the required value for a can be calucated
+    // v_r^2/mu = 2/r - 1/a => 2/r - v^2/mu = 1/a
     var soi = txOrbit.originPlanet.soi;
     var mu = txOrbit.originPlanet.mu;
-    var a = Math.abs(1/(2/soi-v_ship_soi**2/mu));
-    var v_ship_eject = Math.sqrt(mu*(2/parkingOrbit.r + 1/a));
-
-    var deltaV = v_ship_eject - parkingOrbit.v;
-
-    var theta = Math.acos(a/(a+parkingOrbit.r));
-    var ejectionAngle = 2*pi - theta;
+    var a_hyp = Math.abs(1/(2/soi - v2**2/mu));
+    
+    // calculate v1 from vis-viva eqn
+    var v1 = Math.sqrt(mu*(2/parkingOrbit.r + 1/a_hyp));
+    var v0 = Math.sqrt(mu/parkingOrbit.r);
+    var deltaV = v1-v0;
+    
+    var theta = Math.acos(a_hyp/(a_hyp+parkingOrbit.r));
+    var ejectionAngle = (pi - theta) * 180/pi;
 
     return {deltaV: deltaV, ejectionAngle: ejectionAngle};
 }
