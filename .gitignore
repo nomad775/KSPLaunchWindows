@@ -5,3 +5,4 @@ Web.config
 .vs/slnx.sqlite
 .vs/VSWorkspaceState.json
 *.config
+*.sln

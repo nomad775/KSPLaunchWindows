@@ -8,23 +8,19 @@
         
         <style>
             body{
-                width: 360;
+                width: 360px;
                 margin: auto;
-                background-color: 22324d;
-/*                border: 3px solid white;*/
+                background-color: #22324d;
             }
             
-            body div{
-                background-color: silver;
-/*                border: 2px solid #BADA55;*/
-            }
-            
-            #divViewer{
-                width: 350;
-                height: 350;
+           
+
+            #divViewer {
+                width: 350px;
+                height: 350px;
                 padding: 5px;
-                background-color: aliceblue;
-                border: 13px solid 484f5b;
+                background-color: #131339;
+                border: 13px solid #484f5b;
                 border-radius: 10px;
                 margin-bottom: 10px;
             }
@@ -32,7 +28,11 @@
             svg *{
                 vector-effect: non-scaling-stroke;
             }
-            
+
+            .mfdFrame {
+                background-color: #131339;
+            }
+
             #displayContainer{
                 display: grid;
                 width: 350;
@@ -155,43 +155,105 @@
         
     </head>
     <body>
-        <div id="heading">
-            <h1>Ejection Angle</h1>
-        </div>
-        
-        <div id="divViewer">
-            <svg id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <style>
+                .fn {
+                    font-family: "VT323", "Lucida Console", "monospace";
+                    font-size: 10pt;
+                    fill: greenyellow;
+                    width: 60px;
+                }
+            </style>
+
+            <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
+
+            <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
+            <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
+            <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
+            <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
+            <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
+
+            <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
+            <text class="fn" text-anchor="middle" x="-90" y="45"></text>
+            <text class="fn" text-anchor="middle" x="-30" y="45"></text>
+            <text class="fn" text-anchor="middle" x="30" y="45"></text>
+            <text class="fn" text-anchor="middle" x="90" y="45">PREV</text>
+            <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
+
+            <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        </svg>
+
+        <!--<div id="divViewer">-->
+            <svg class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
                 <!-- PRIMARY -->
-                <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan"/>
-<!--            <path id="orbit_origin" stroke="gray" fill="none" stroke-dashArray="3 2 3"/>-->
+                <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
+                <!--            <path id="orbit_origin" stroke="gray" fill="none" stroke-dashArray="3 2 3"/>-->
 
-                <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none"/>
-                
-                <line id="sunDir" x1=0 y1=0 x2=-500 y2=0 stroke="orange" stroke-width="3"/>
+                <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none" />
+
+                <line id="sunDir" x1=0 y1=0 x2=-500 y2=0 stroke="orange" stroke-width="3" />
                 <line id="sunDirOut" x1="0" y1="0" x2="500" y2="0" stroke="black" stroke-opacity=".5" />
                 <line id="LnDir" x1="0" y1="0" x2="200" y2="0" stroke="black" stroke-opacity=".1" />
 
-                <line id="prograde" x1="0" y1="0" x2="0" y2="-300" stroke="green" stroke-opacity=".4"/>
-                
+                <line id="prograde" x1="0" y1="0" x2="0" y2="-300" stroke="green" stroke-opacity=".4" />
+
                 <g id="hyperbolaGroup">
-                    <path id="hyperbola" d="M 93.01 0 L 
+                    <path id="hyperbola" d="M 93.01 0 L
                          92.30 -7.25   90.14 -14.72 86.49 -22.64"
-                        stroke="black" fill="none"/>
-                
-                    <line id="axis" x1=0 y1=0 x2=200 y2=0 stroke="grey" stroke-dashArray="3 2 3"/>
-                    <line id="asymptote" x1="140" y1="0" x2="46.50" y2="-131.53" stroke="gray" stroke-width="1" stroke-dashArray="3 2 3"/>
-                    <circle id="peMarker" cx="87.69" cy="0" r="5" stroke="red" fill="none"/>
+                          stroke="white" fill="none" />
+
+                    <line id="axis" x1=0 y1=0 x2=200 y2=0 stroke="grey" stroke-dashArray="3 2 3" />
+                    <line id="asymptote" x1="140" y1="0" x2="46.50" y2="-131.53" stroke="gray" stroke-width="1" stroke-dashArray="3 2 3" />
+                    <circle id="peMarker" cx="87.69" cy="0" r="5" stroke="red" fill="none" />
                 </g>
-                
+
             </svg>
-        </div>
-            
+        <!--</div>-->
+
+        <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <style>
+                .fn {
+                    font-family: "VT323", "Lucida Console", "monospace";
+                    font-size: 10pt;
+                    fill: greenyellow;
+                    width: 60px;
+                }
+            </style>
+
+            <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+
+            <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
+            <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
+            <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
+            <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
+            <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
+
+            <text class="fn" text-anchor="middle" x="-150" y="15">AP</text>
+            <text class="fn" text-anchor="middle" x="-90" y="15">PE</text>
+            <text class="fn" text-anchor="middle" x="-30" y="15">LAN</text>
+            <text class="fn" text-anchor="middle" x="30" y="15">ARG PE</text>
+            <text class="fn" text-anchor="middle" x="90" y="15">UT</text>
+            <text class="fn" text-anchor="middle" x="150" y="15">T-PE</text>
+
+            <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        </svg>
+
         <div id="displayContainer">
 
             <div id="divAP" class="paramDisp">APOAPSIS<br><div class="display"><input name="ap" type="text" value="0000" style="width:100"> km</div> </div>
 
-            <div id="divPE" class="paramDisp" >PERIAPSIS<div class="display"><input name="pe" type="text" value="0000" style="width:100"> km</div></div>
+            <div id="divPE" class="paramDisp">PERIAPSIS<div class="display"><input name="pe" type="text" value="0000" style="width:100"> km</div></div>
 
             <div class="paramDisp">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>
             <div class="paramDisp">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
@@ -201,15 +263,16 @@
             <div class="paramDisp">
                 UT<div class="display">
                     y:<input name="tPe" type="text" value="00" style="width:25">
-                    d:<input name="tPe" type="text" value="000"  style="width:25">
-                    <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00"style="width:18">
+                    d:<input name="tPe" type="text" value="000" style="width:25">
+                    <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
                 </div>
             </div>
 
-            <div class="paramDisp">T TO PE<div class="display">
+            <div class="paramDisp">
+                T TO PE<div class="display">
                     y:<input name="tPe" type="text" value="00" style="width:25">
-                    d:<input name="tPe" type="text" value="000"  style="width:25">
-                    <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00"style="width:18">
+                    d:<input name="tPe" type="text" value="000" style="width:25">
+                    <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
                 </div>
             </div>
 
@@ -217,7 +280,7 @@
             <div class="paramDisp">DELTA V<div class="display"><span>0000.0</span> m/s</div></div>
 
         </div>
-            
+
         <div id="keyboard">
             <button>1</button>
             <button>2</button>
