@@ -248,7 +248,7 @@ function initialize(){
     $("#originPlanetData p").text(origin);
     $("#destinationPlanetData p").text(destination);
     
-    onStepButton(1);
+    /*onStepButton(1);*/
     onDateChange();
 }
 
@@ -423,8 +423,11 @@ function updateTables(t){
 function calcEject(){
     
     var origin = originPlanet.name;
-    var t= getCurrentTime;
-    var qryStr = `?origin=${origin}&txTime=${t}`;
+    var destination = destinationPlanet.name;
+    var t = getCurrentTime();
+    var vSOI = 1384;
+
+    var qryStr = `?origin=${origin}&destination=${destination}&vSOI=${vSOI}&t=${t}`;
     location = "ejectionAngle.html" + qryStr;
     
     /*var park={r:700000, v:2810}

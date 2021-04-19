@@ -9,13 +9,26 @@
             width: 360px;
             margin: auto;
             background-color: #22324d;
+            touch-action: manipulation;
+            //prevent zoom on double tap
         }
 
         #viewer {
+            position: relative;
             width: 360px;
             border-width: 10px;
             border-color: red;
             background-color: black;
+            touch-action: none;
+        }
+
+        #onScreenText {
+            position: absolute;
+            margin-top: 0px;
+            margin-left: 20px;
+            color: greenyellow;
+            font-family: "VT323";
+            font-size: 12pt;
         }
 
         .orbit {
@@ -24,12 +37,95 @@
         }
 
         svg {
-            background-color: #131339
+            background-color: #131339;
+            vector-effect: non-scaling-stroke;
         }
 
-            svg * {
-                vector-effect: non-scaling-stroke;
-            }
+        
+        .fn {
+            font-family: "VT323", "Lucida Console", "monospace";
+            font-size: 12pt;
+            fill: greenyellow;
+            
+            width: 60px;
+        }
+
+        .activeFn {
+            fill: black;
+            font-family: "VT323", "Lucida Console", "monospace";
+            font-size: 12pt;
+            color: black;
+            background-color: greenyellow;
+        }
+
+        rect.fn {
+            fill: #131339;
+        }
+        rect.activeFn{
+            fill: greenyellow;
+        }
+        
+
+        #displayContainer {
+            display: grid;
+            width: 350;
+            grid-template-columns: 150px 150px;
+            grid-template-rows: 50 50 50 50 50;
+            grid-row-gap: 5px;
+            grid-column-gap: 10px;
+            justify-content: center;
+            background-color: 484f5b;
+            border: 1px solid black;
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .paramDisp {
+            color: white;
+            overflow: hidden;
+            padding: 5px;
+            border: 1px solid black;
+            background-color: #858c98;
+            border-radius: 3px;
+        }
+
+        .display, input {
+            background-color: darkslategrey;
+            text-align: right;
+            color: greenyellow;
+            font-family: "VT323";
+            font-size: 12pt;
+            border-radius: 2px;
+        }
+
+        .paramDisp_hidden {
+            display: none;
+        }
+
+        .paramDisp_inactive {
+            color: #777;
+        }
+
+        div.paramDisp_inactive .display, div.paramDisp_inactive input {
+            background-color: darkslategrey;
+            text-align: right;
+            color: black;
+            font-family: "VT323";
+            font-size: 12pt;
+            border-radius: 2px;
+        }
+
+        input {
+            width: auto;
+            border: none;
+        }
+
+        button {
+            height: 1.2cm;
+            width: 1.2cm;
+            margin: 1px;
+        }
+
     </style>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -42,29 +138,18 @@
 
         var boolDown;
         var mouseDown;
+        
+        var lastD;
+        var lastTouch;
+        var lastX;
+        var lastY;
 
-        function zoomSVG() {
+        var buttons = {};
+        var fields={};
 
-            var zoom = document.forms["settings"]["zoomSlider"].value;
-            var planetbox = [" -53.5 -42.1 105.2 105.2 ", " -99.3 -98.1 196.7 196.7 ", " -136 -136 272 272 ", " -199.7 -199.9 414.5 414.6 ", " -466.7 -398.1 816.8 816.8 ", " -708.9 -660.6 1375.5 1375.4 ", " -1051.8 -1080.7 1802.4 1802.4 "]
+        var activeButton;
+        var activeField;
 
-            var rScale = [7, 4, 3, 2, 1, 1, .8];
-
-            var attr = document.getElementById("solarSystem").attributes.getNamedItem("viewBox");
-            attr.nodeValue = planetbox[zoom];
-
-            var r = 12 / rScale[zoom];
-            console.log(r);
-
-            document.querySelectorAll(".planet").forEach(
-                function (item, index) {
-                    var radius = item.attributes.getNamedItem("r");
-                    radius.nodeValue = r; //25/zoom;
-                    console.log("R:" + r);
-                }
-            )
-
-        }
 
         function zoomWheel(event) {
             var v = event.deltaY;
@@ -76,12 +161,22 @@
 
         function zoom(amount) {
 
-            var max = viewBox.height > 100 || viewBox
-            viewBox.height += amount;
-            viewBox.width += amount;
             viewBox.x += -amount / 2;
             viewBox.y += -amount / 2;
+            viewBox.width += amount;
+            viewBox.height += amount;
 
+
+            if (viewBox.x < -1100) viewBox.x = -1100;
+            if (viewBox.y < -1100) viewBox.y = -1100;
+
+            if (viewBox.height > 2000) viewBox.height = 2000;
+            if (viewBox.width > 2000) viewBox.width = 2000;
+
+            if (viewBox.x > -300) viewBox.x = -300;
+            if (viewBox.y > -300) viewBox.y = -300;
+            if (viewBox.height < 600) viewBox.height = 600;
+            if (viewBox.width < 600) viewBox.width = 600;
 
             /* var r = 12 / rScale[zoom];
              console.log(r);
@@ -96,32 +191,175 @@
         }
 
         function toggleMouseDown(event) {
-
             boolDown = !boolDown;
-            console.log(boolDown);
-            //console.log(mouseDown.actve);
+        }
 
-            //                var isDown = mouseDown.active;
-            //                mouseDown = {active: !isDown, x: event.offsetX, y: event.offsetY};
+        function touchDown(event) {
+            lastX = event.clientX;
+            lastY = event.clientY;
+        }
+
+        function touchUp() {
+            lastX = NaN;
+            lastY = NaN;
         }
 
         function pan(event) {
-
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            
             //if(!mouseDown.active) return;
-            if (boolDown) {
-                viewBox.x -= event.movementX;
-                viewBox.y -= event.movementY;
-            }
+            //if (boolDown) {
+            if (event.touches.length == 1) {
 
+                let x = event.touches[0].clientX;
+                let y = event.touches[0].clientY;
+
+                let dx = x - lastX;
+                let dy = y - lastY;
+
+                if (!isNaN(dx) && !isNaN(dy)) {
+
+                    viewBox.x -= dx;
+                    viewBox.y -= dy;
+                    
+                }
+
+                lastX = x;
+                lastY = y;
+                
+            } else {
+
+                let x0 = event.touches[0].clientX;
+                let y0 = event.touches[0].clientY;
+                let x1 = event.touches[1].clientX;
+                let y1 = event.touches[1].clientY;
+                let d = Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
+                let deltaD = lastD - d;
+
+                if (d > lastD) {
+                    zoom(-25);
+                } else {
+                    zoom(25)
+                }
+
+                lastD = d;
+                //$("#fnStr").text(deltaD);
+            
+                
+            }
+            
             //console.log(event.offsetX, event.movementX);
         }
 
+        function next() {
+            qryStr = `?originPlanet=${originPlanet}&destinationPlanet=${destinationPlanet}`
+            location = "transferPosition.html" + qryStr;
+        }
+
+        function keyPress(event, k) {
+            //event is mouse event from button click
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (k == "E") {
+                //setActiveField('none');
+                activeField.callback();
+                return;
+            }
+
+            let theField = $(activeField.outputQry);
+            let curVal = theField.val();
+
+            if (k == "B") {
+                var newVal = curVal.slice(0, -1);
+            } else {
+                var newVal = curVal + k;
+            }
+
+            theField.val(newVal);
+        }
+
+        function setActiveField(id) {
+
+            console.log(id);
+            //deactive current active field
+            if (activeField != undefined) {
+                activeField.value = $(activeField.outputQry).val();
+                $(activeField.outputQry).removeClass("activeFn").addClass("fn");
+            }
+
+            if (id == "none" ) {
+                //activeField.callback();
+                $(activeField.outputQry).removeClass("activeFn").addClass("fn");
+                activeField = {};
+                return;
+            }
+
+            activeField = fields[id];
+
+            //$(activeField.outputQry).val("");
+            $(activeField.outputQry).addClass("activeFn");
+
+            //activeField.value = NaN;
+
+            window.scroll(0, 400);
+        }
+
+        function buttonPress(index) {
+
+            console.log(buttons);
+
+            $("#fn" + activeButton).removeClass("activeFn").addClass("fn");
+            $("#activeLabel").removeClass("activeFn").addClass("fn");
+            
+
+            if (index != "none") {
+
+                $("#fn" + index).addClass("activeFn").removeClass("fn");
+
+                let x = Number(buttons[index].x - buttons[index].width / 2)
+                console.log(buttons[index].x, buttons[index].width,x);
+
+                $("#activeLabel").attr("x", x).addClass("activeFn");
+                buttons[index].fn();
+                
+            }
+
+            activeButton = index;
+        }
+
+        function init() {
+
+            console.log("init");
+
+            let fn0 = () => { setActiveField("UT_y") };
+            let fn4 = () => { zoom(100); buttonPress("none") };
+            let fn5 = () => { zoom(-100); buttonPress("none") };
+
+            buttons["b0"] = { x: -150, width: 60, label: "UT", fn: fn0 };
+            buttons["b4"] = { x: 90, width: 60,  label: "ZOOM -", fn: fn4 };
+            buttons["b5"] = { x: 150, width: 60, label: "ZOOM +", fn: fn5 };
+
+
+            let cb0 = () => { setActiveField("UT_d") };
+            let cb1 = () => { setActiveField("UT_h") };
+            let cb2 = () => { setActiveField("UT_m") };
+            let cb3 = () => { setActiveField("none"); buttonPress("none")   };
+            
+            fields["UT_m"] = { value: 00, outputQry: "input[name='UT_m']", button: 0, callback: cb3 };
+            fields["UT_h"] = { value: 0 , outputQry: "input[name='UT_h']", button: 0, callback: cb2 };
+            fields["UT_d"] = { value: 000, outputQry: "input[name='UT_d']", button: 0, callback: cb1 };
+            fields["UT_y"] = { value: 000, outputQry: "input[name='UT_y']", button: 0, callback: cb0 };
+
+        }
 
         $(document).ready(function () {
 
+            init();
+
             mouseDown = { active: false, x: 0, y: 0 };
             boolDown = false;
-            console.log(mouseDown);
 
             var svg = document.getElementById("solarSystem");
             var vb = svg.viewBox;
@@ -136,8 +374,9 @@
                 var name = $(this).attr("id");
 
                 if (i == 1) {
+                    // setting origin
                     originPlanet = name
-                    $("#originCard p").text(name);
+                    $("#fnStr").text("TRANSFER : " + originPlanet.toUpperCase() + ": SELECT DESTINATION");
 
                     $("#originSelected").attr("cx", $(this).attr("cx"));
                     $("#originSelected").attr("cy", $(this).attr("cy"));
@@ -147,96 +386,98 @@
                     if (name == originPlanet) {
                         i = 0;
                         $("#originSelected").attr("fill", "none");
+                        $("#destSelected").attr("fill", "none");
+                        $("#fnStr").text("TRANSFER : SELECT ORIGIN");
                         return;
                     }
 
                     destinationPlanet = name;
-                    qryStr = `?originPlanet=${originPlanet}&destinationPlanet=${destinationPlanet}`
-                    location = "transferPosition.html" + qryStr;
+                    $("#fnStr").text("TRANSFER : " + originPlanet.toUpperCase() + ": " + destinationPlanet.toUpperCase());
+                    $("#destSelected").attr("cx", $(this).attr("cx"));
+                    $("#destSelected").attr("cy", $(this).attr("cy"));
+                    $("#destSelected").attr("fill", "red");
+                    
                 }
 
                 console.log(i, originPlanet, destinationPlanet);
             })
+
+            
         })
 
     </script>
 
 </head>
-    <body>
 
-        <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <style>
-                .fn {
-                    font-family: "VT323", "Lucida Console", "monospace";
-                    font-size: 10pt;
-                    fill: greenyellow;
-                    width: 60px;
-                }
-            </style>
+<body ontouchup="touchUp()">
 
-            <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
+    <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-            <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
-            <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
-            <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
-            <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
-            <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
+        <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
 
-            <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-            <text class="fn" text-anchor="middle" x="-90" y="45"></text>
-            <text class="fn" text-anchor="middle" x="-30" y="45"></text>
-            <text class="fn" text-anchor="middle" x="30" y="45"></text>
-            <text class="fn" text-anchor="middle" x="90" y="45"></text>
-            <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
+        <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
+        <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
+        <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
+        <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
+        <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
 
-            <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick=""/>
-        </svg>
+        <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
+        <text class="fn" text-anchor="middle" x="-90" y="45"></text>
+        <text class="fn" text-anchor="middle" x="-30" y="45"></text>
+        <text class="fn" text-anchor="middle" x="30" y="45"></text>
+        <text class="fn" text-anchor="middle" x="90" y="45"></text>
+        <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
 
-        <div id="viewer" width="360" margin-left="auto" onwheel="zoomWheel(event)" onmousedown="toggleMouseDown(event)" onmouseup="toggleMouseDown(event)" onmousemove="pan(event)" onmouseleave="boolDown=false">
+        <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="next()" />
+    </svg>
 
-            <svg id="solarSystem" height="360" width="360" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <div id="viewer" width="360" margin-left="auto" onwheel="zoomWheel(event)" onpointerdown="toggleMouseDown(event)" onpointerup="toggleMouseDown(event)"  onmouseleave="boolDown=false" ontouchmove="pan(event)" ontouchend="touchUp(event);boolDown=true">
+        <div id="onScreenText">
+            <p id="fnStr">TRANSFER: SELECT ORIGIN</p>
+        </div>
+        <svg id="solarSystem" height="360" width="360" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-                <circle id="originSelected" cx="0" cy="0" r="25" fill="none" />
-                <circle id="destSelected" cx="0" cy="0" r="25" fill="none" />
+            <circle id="originSelected" cx="0" cy="0" r="25" fill="none" />
+            <circle id="destSelected" cx="0" cy="0" r="25" fill="none" />
 
-                <circle id="sun" cx="0" cy="0" r="2.5" fill="yellow" stroke="orange" stroke-width="1" />
+            <circle id="sun" cx="0" cy="0" r="2.5" fill="yellow" stroke="orange" stroke-width="1" />
 
-                <!-- arc path rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
-                <!-- M ap.x, ap.y
-             A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
-                <!-- M pe.x pe.y
-             A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
+            <!-- arc path rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
+            <!-- M ap.x, ap.y
+            A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
+            <!-- M pe.x pe.y
+            A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
 
-                <path class="orbit" id="mohoOrbit" stroke="peachpuff" d="M   -5.50   62.92
+            <path class="orbit" id="mohoOrbit" stroke="peachpuff" d="M   -5.50   62.92
                                                         A 52.63   51.57  -265    0 0    3.67  -41.95
                                                         A 52.63   51.57  -265    0 0   -5.50   62.92 " />
-                <path class="orbit" id="eveOrbit" stroke="purple" d="M  -95.93   25.70
+            <path class="orbit" id="eveOrbit" stroke="purple" d="M  -95.93   25.70
                                                         A 98.33   98.32  -195    0 0   94.02  -25.19
                                                         A 98.33   98.32  -195    0 0  -95.93   25.7  " />
-                <path class="orbit" id="kerbinOrbit" stroke="cyan" d="M -136.00    0
+            <path class="orbit" id="kerbinOrbit" stroke="cyan" d="M -136.00    0
                                                         A 136.00 136.00  -180    0 0  136.00    0
                                                         A 136.00 136.00  -180    0 0 -136.00    0    " />
-                <path class="orbit" id="dunaOrbit" stroke="red" d="M  155.37  152.68
+            <path class="orbit" id="dunaOrbit" stroke="red" d="M  155.37  152.68
                                                         A 207.26 207.00  -315.5  0 0 -140.30 -137.87
                                                         A 207.26 207.00  -315.5  0 0  155.37  152.68 " />
-                <path class="orbit" id="dresOrbit" stroke="chocolate" d="M -460.51   81.20
+            <path class="orbit" id="dresOrbit" stroke="chocolate" d="M -460.51   81.20
                                                         A 408.39 404.08  -190    0 0  343.88  -60.63
                                                         A 408.39 404.08  -190    0 0 -460.51   81.2  " />
 
-                <path class="orbit" id="joolOrbit" stroke="green" d="M  348.91 -552.57
+            <path class="orbit" id="joolOrbit" stroke="green" d="M  348.91 -552.57
                                                         A 687.74 686.87   -232    0 0 -444.58  569.04
                                                         A 687.74 686.87   -232    1 0  348.91 -552.57 " />
 
-                <path class="orbit" id="eelooOrbit" d="M -729.89 -869.84 A 901.19 870.20  -130    0 0 428.66 510.86
+            <path class="orbit" id="eelooOrbit" d="M -729.89 -869.84 A 901.19 870.20  -130    0 0 428.66 510.86
                                                         A 901.19 870.20  -130    0 0 -729.89 -869.84 " stroke="gray" />
 
 
-                <!--<circle class="planet" id="Moho"   cx="0" cy="0" r="18" fill="peachpuff"/>
+            <!--<circle class="planet" id="Moho"   cx="0" cy="0" r="18" fill="peachpuff"/>
             <circle class="planet" id="Eve"    cx="0" cy="0" r="18" fill="purple"/>
             <circle class="planet" id="Kerbin" cx="0" cy="0" r="18" fill="cyan"/>
             <circle class="planet" id="Duna"   cx="0" cy="0" r="18" fill="crimson"/>
@@ -244,16 +485,16 @@
             <circle class="planet" id="Jool"   cx="0" cy="0" r="18" fill="green" />
             <circle class="planet" id="Eeloo"  cx="0" cy="0" r="18" fill="gray"/>-->
 
-                <circle class="planet" id="Moho" cx="-5.50" cy="62.92" r="18" fill="peachpuff" />
-                <circle class="planet" id="Eve" cx="-95.93" cy="25.70" r="18" fill="purple" />
-                <circle class="planet" id="Kerbin" cx="-136.00" cy="0" r="18" fill="cyan" />
-                <circle class="planet" id="Duna" cx="155.37" cy="152.68" r="18" fill="crimson" />
-                <circle class="planet" id="Dres" cx="-460.51" cy="81.20" r="18" fill="#a44128" />
-                <circle class="planet" id="Jool" cx="348.92" cy="-552.57" r="18" fill="green" />
-                <circle class="planet" id="Eeloo" cx="-729.89" cy="-869.84" r="18" fill="gray" />
+            <circle class="planet" id="Moho" cx="-5.50" cy="62.92" r="18" fill="peachpuff" />
+            <circle class="planet" id="Eve" cx="-95.93" cy="25.70" r="18" fill="purple" />
+            <circle class="planet" id="Kerbin" cx="-136.00" cy="0" r="18" fill="cyan" />
+            <circle class="planet" id="Duna" cx="155.37" cy="152.68" r="18" fill="crimson" />
+            <circle class="planet" id="Dres" cx="-460.51" cy="81.20" r="18" fill="#a44128" />
+            <circle class="planet" id="Jool" cx="348.92" cy="-552.57" r="18" fill="green" />
+            <circle class="planet" id="Eeloo" cx="-729.89" cy="-869.84" r="18" fill="gray" />
 
 
-                <!-- com circles
+            <!-- com circles
             <circle cx=0 cy=0 r=80 fill="none" stroke="yellow"/>
             <circle cx=56.6 cy=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
             <circle cy=56.6 cx=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
@@ -265,85 +506,96 @@
             <circle cy=-56.6 cx=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
             <circle cx=-56.6 cy=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
             -->
-                <!--<animateMotion xlink:href="#Moho" dur="14.44s" repeatCount="indefinite"> <mpath xlink:href="#mohoOrbit"/>   </animateMotion>
+           <!-- <animateMotion xlink:href="#Moho" dur="14.44s" repeatCount="indefinite"> <mpath xlink:href="#mohoOrbit"/>   </animateMotion>
             <animateMotion xlink:href="#Eve" dur="36.87s" repeatCount="indefinite">   <mpath xlink:href="#eveOrbit"/>    </animateMotion>
             <animateMotion xlink:href="#Kerbin" dur="60s" repeatCount="indefinite">  <mpath xlink:href="#kerbinOrbit"/> </animateMotion>
             <animateMotion xlink:href="#Duna" dur="112.88s" repeatCount="indefinite"> <mpath xlink:href="#dunaOrbit"/>   </animateMotion>
             <animateMotion xlink:href="#Dres" dur="312.23" repeatCount="indefinite">  <mpath xlink:href="#dresOrbit"/>   </animateMotion>
             <animateMotion xlink:href="#Jool" dur="682.31s" repeatCount="indefinite"> <mpath xlink:href="#joolOrbit"/>   </animateMotion>
             <animateMotion xlink:href="#Eeloo" dur="1023s" repeatCount="indefinite">  <mpath xlink:href="#eelooOrbit"/>  </animateMotion>-->
-                <!-- mean orbit -->
-                <!--            <circle id="mohoSMA"  cx="0" cy="0" r="52.63" fill=none stroke="white"/>-->
-                <!--            <circle id="eveSMA"   cx="0" cy="0" r="98.33" fill=none stroke="white"/>-->
-                <!--            <circle id="dunaSMA"  cx="0" cy="0" r="207.26" fill=none stroke="white"/>-->
-                <!--            <circle id="dresSMA"  cx="0" cy="0" r="408.84" fill=none stroke="white"/>-->
-                <!--            <circle id="joolSMA"  cx="0" cy="0" r="687.74" fill=none stroke="white"/>-->
-                <!--            <circle id="eelooSMA" cx="0" cy="0" r="901.19" fill=none stroke="white"/>-->
-                <!--            <circle id="mohoSMA"  cx="-.92" cy="10.49" r="52.63" fill=none stroke="white"/>-->-->
-                <!--            <circle id="eveSMA"   cx="-.95" cy=".25" r="98.33" fill=none stroke="white"/>-->
-                <!--            <circle id="dunaSMA"  cx="7.54" cy="7.41" r="207.26" fill=none stroke="white"/>-->
-                <!--            <circle id="dresSMA"  cx="-58.32" cy="10.28" r="408.84" fill=none stroke="white"/>-->
-                <!--            <circle id="joolSMA"  cx="-21.17" cy="27.10" r="687.74" fill=none stroke="white"/>-->
-                <!--            <circle id="eelooSMA" cx="-150.61" cy="-179.49" r="901.19" fill=none stroke="white"/>-->
-                <!-- <circle cx="-21.17" cy="27.10" r="687.74" fill="none" stroke="yellow" />
+            <!-- mean orbit -->
+            <!--            <circle id="mohoSMA"  cx="0" cy="0" r="52.63" fill=none stroke="white"/>-->
+            <!--            <circle id="eveSMA"   cx="0" cy="0" r="98.33" fill=none stroke="white"/>-->
+            <!--            <circle id="dunaSMA"  cx="0" cy="0" r="207.26" fill=none stroke="white"/>-->
+            <!--            <circle id="dresSMA"  cx="0" cy="0" r="408.84" fill=none stroke="white"/>-->
+            <!--            <circle id="joolSMA"  cx="0" cy="0" r="687.74" fill=none stroke="white"/>-->
+            <!--            <circle id="eelooSMA" cx="0" cy="0" r="901.19" fill=none stroke="white"/>-->
+            <!--            <circle id="mohoSMA"  cx="-.92" cy="10.49" r="52.63" fill=none stroke="white"/>-->-->
+            <!--            <circle id="eveSMA"   cx="-.95" cy=".25" r="98.33" fill=none stroke="white"/>-->
+            <!--            <circle id="dunaSMA"  cx="7.54" cy="7.41" r="207.26" fill=none stroke="white"/>-->
+            <!--            <circle id="dresSMA"  cx="-58.32" cy="10.28" r="408.84" fill=none stroke="white"/>-->
+            <!--            <circle id="joolSMA"  cx="-21.17" cy="27.10" r="687.74" fill=none stroke="white"/>-->
+            <!--            <circle id="eelooSMA" cx="-150.61" cy="-179.49" r="901.19" fill=none stroke="white"/>-->
+            <!-- <circle cx="-21.17" cy="27.10" r="687.74" fill="none" stroke="yellow" />
             <circle cx="0" cy="0" r=722.12 stroke="red" fill="none"/>
             <circle cx="0" cy="0" r=653.35 stroke="red"fill="none"/>-->
 
 
-            </svg>
-        </div>
-
-
-        <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <style>
-                .fn {
-                    font-family: "VT323", "Lucida Console", "monospace";
-                    font-size: 10pt;
-                    fill: greenyellow;
-                    width: 60px;
-                }
-            </style>
-
-            <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
-
-            <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
-            <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
-            <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
-            <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
-            <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
-
-            <text class="fn" text-anchor="middle" x="-150" y="15">SET UT </text>
-            <text class="fn" text-anchor="middle" x="-90" y="15"> </text>
-            <text class="fn" text-anchor="middle" x="-30" y="15"> </text>
-            <text class="fn" text-anchor="middle" x="30" y="15"> </text>
-            <text class="fn" text-anchor="middle" x="90" y="15">ZOOM +</text>
-            <text class="fn" text-anchor="middle" x="150" y="15">ZOOM -</text>
-
-            <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="zoom(100)" />
-            <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="zoom(-100)" />
         </svg>
+    </div>
 
+    <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        
+        <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
 
+        <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
+        <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
+        <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
+        <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
+        <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
 
-        <div id="settings" width=500>
-            <form name="settings">
-                <input name="year" type="number" min="1" max="100" value="1" />
-                <input name="day" type="number" min="1" max="426" value="1" />
-                <br>
-                <input name="zoomSlider" type="range" min="0" max="6" value="6" onchange="zoomSVG()" width="600px" />
-            </form>
+        <rect class="" id="activeLabel" x="-179" y="0" height="20" width="60" fill="none"/>
+
+        <text id="fnb0" class="fn" text-anchor="middle" x="-150" y="15">SET UT</text>
+        <text id="fnb1" class="fn" text-anchor="middle" x="-90" y="15"> </text>
+        <text id="fnb2" class="fn" text-anchor="middle" x="-30" y="15"> </text>
+        <text id="fnb3" class="fn" text-anchor="middle" x="30" y="15"> </text>
+        <text id="fnb4" class="fn" text-anchor="middle" x="90" y="15">ZOOM -</text>
+        <text id="fnb5" class="fn" text-anchor="middle" x="150" y="15">ZOOM +</text>
+
+        <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b0')" />
+        <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b4')" />
+        <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b5')" />
+    </svg>
+
+    <div id="displayContainer" width=500>
+
+        <div class="paramDisp">
+            UT<div class="display">
+                y:<input name="UT_y" type="text" value="001" maxlength="3" style="width:25px">
+                d:<input name="UT_d" type="text" value="001" maxlength="3" style="width:25px">
+                <input name="UT_h" type="text" value="0" maxlength="1" style="width:10px">:
+                <input name="UT_m" type="text" value="00" maxlength="2" style="width:18px">
+            </div>
         </div>
 
-
-        <div id="dataCards">
-            <div id="originCard" height="100" width="200"><p>Origin</p></div>
-            to
-            <div id="destinationCard" height="100" width="200"><p>Destination</p></div>
+        <div class="paramDisp_hidden">
+            UT-DISP<div class="display">
+                y:<input name="tPe" type="text" value="00" style="width:25">
+                d:<input name="tPe" type="text" value="000" style="width:25">
+                <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
+            </div>
         </div>
+    </div>
 
-    </body>
+    <div id="keyboard">
+        <button id="key1" onclick="keyPress(event,1)">1</button>
+        <button id="key2" onclick="keyPress(event,2)">2</button>
+        <button id="key3" onclick="keyPress(event,3)">3</button>
+        <button id="key4" onclick="keyPress(event,4)">4</button>
+        <button id="key5" onclick="keyPress(event,5)">5</button>
+        <button id="keyB" onclick="keyPress(event,'B')">B</button>
+        <button id="keyU" onclick="keyPress(event,'U')">U</button>
+        <button id="key6" onclick="keyPress(event,6)">6</button>
+        <button id="key7" onclick="keyPress(event,7)">7</button>
+        <button id="key8" onclick="keyPress(event,8)">8</button>
+        <button id="key9" onclick="keyPress(event,9)">9</button>
+        <button id="key0" onclick="keyPress(event,0)">0</button>
+        <button id="key." onclick="keyPress(event,'.')">.</button>
+        <button id="keyE" onclick="keyPress(event,'E')">E</button>
+    </div>
+</body>
 </html>

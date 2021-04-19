@@ -11,10 +11,10 @@
                 width: 360px;
                 margin: auto;
                 background-color: #22324d;
+                touch-action: manipulation;
+                //prevent zoom on double tap
             }
             
-           
-
             #divViewer {
                 width: 350px;
                 height: 350px;
@@ -66,28 +66,166 @@
                 border-radius: 2px;
                 
             }
-            
+
+            .paramDisp_hidden {
+                display: none;
+            }
+
+            .paramDisp_inactive{
+                color: #777;
+            }
+
+            div.paramDisp_inactive .display, div.paramDisp_inactive input {
+                background-color: darkslategrey;
+                text-align: right;
+                color: black;
+                font-family: "VT323";
+                font-size: 12pt;
+                border-radius: 2px;
+            }
+
             input{
                 width:auto;
                 border: none;
             }
+
             span{
-                width: 130;
+                width: 130px;
                 height: 20px;
             }
             
             button{
                 height:1.2cm;
                 width: 1.2cm;
+                margin: 1px;
             }
+
         </style>
         
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<!--        <script src="orbitalMechanics.js"></script>-->
+        <script src="orbitalMechanics.js"></script>
 <!--        <script src="planetPositions.js"></script>-->
-        
+
         <script>
-            
+
+            var origin;
+            var destination;
+            var txOrbit;
+            var parkOrbit;
+
+            class Orbit {
+
+                name = "theName";
+
+                sma = 0;
+                ecc = 0;
+                LnPe = 0;
+                mean0 = 0;
+                
+                period = 0;
+
+                c = 0;
+                cx = 0;
+                cy = 0;
+
+                constructor(ap, pe, LAN, argPe, mu_parent) {
+
+                    this.name = name;
+                    this.mu_parent = mu_parent;
+
+                    this.sma = (ap + pe) / 2;
+                    this.ecc = (ap - pe) / (ap + pe);
+                    this.period = 2 * pi * Math.sqrt(this.sma ** 3 / this.mu_parent);
+
+                    this.LnPe = LAN+argPe;
+                    this.mean0 = 0;
+
+                    this.theta0 = this.trueAnomaly(this.mean0);
+                    this.Ln0 = this.LnPe + this.theta0;
+
+                    this.c = this.ecc * this.sma;
+                    this.cx = this.c * Math.cos(this.LnPe);
+                    this.cy = this.c * Math.sin(this.LnPe);
+                }
+
+                updateApPe(ap, pe) {
+                    this.ap = ap;
+                    this.pe = pe;
+                    this.sma = (ap + pe) / 2;
+                    this.ecc = (ap - pe) / (ap + pe);
+                    this.period = 2 * pi * Math.sqrt(this.sma ** 3 / this.mu_parent);
+                }
+
+                trueAnomaly(M) {
+
+                    // eccentric anomaly
+                    var E = M;
+
+                    for (var i = 0; i < 7; i++) {
+                        E = M + this.ecc * Math.sin(E);
+                    }
+
+                    // true anomaly
+                    var theta = 2 * Math.atan(Math.sqrt((1 + this.ecc) / (1 - this.ecc)) * Math.tan(E / 2))
+
+                    return modRev(theta, 4);
+                }
+
+                MeanLnAtTimeT(t) {
+                    var percent = t / this.period;
+                    var M = percent * 2 * pi + this.mean0;
+                    var Ln = M + this.LnPe;
+
+                    return modRev(Ln, 4);
+                }
+
+                LnAtTimeT(t) {
+
+                    var percent = t / this.period;
+
+                    //mean anomaly relative to Pe
+                    var M = percent * 2 * pi + this.mean0;
+
+                    // true anomaly
+                    var theta = this.trueAnomaly(M);
+                    var Ln = this.LnPe + theta
+
+                    return modRev(Ln, 4);
+                }
+
+                rAtLn(Ln) {
+                    var r = this.sma * (1 - this.ecc ** 2) / (1 + this.ecc * Math.cos(Ln - this.LnPe))
+                    return r;
+                }
+
+                v(r) {
+                    return Math.sqrt(this.mu_parent * (2 / r - 1 / this.sma))
+                }
+
+            }
+
+            function calculateEjectionOrbit() {
+
+                let apAlt = fields['ap'].value * 1000;
+                let peAlt = fields['pe'].value * 1000;
+                if (peAlt == 0) peAlt = apAlt;
+
+                parkOrbit.updateApPe(apAlt + origin.r, peAlt + origin.r);
+                let r_park = parkOrbit.sma;
+                let v_park = parkOrbit.v(r_park);
+
+                ejectionOrbit = new EjectionOrbit(txOrbit, r_park, v_park);
+
+                updateDisplay("ea", ejectionOrbit.ejectionAngle);
+                updateDisplay("dv", ejectionOrbit.deltaV);
+            }
+        </script>
+
+        <script>
+
+            var fields = {};
+            var activeField = {};
+
             function hyp(a, alpha){
                 
                 var pi = Math.atan(1) * 4;
@@ -105,8 +243,6 @@
                 var width = r0 * 2.5;
                 
                 $("#ejectionOrbit").attr("viewBox",`${left} ${top} ${width} ${width}`);
-                
-                console.log(a,b, ecc, F);
 
                 var d = "M " + r0 + " 0 L ";                
                 
@@ -114,17 +250,10 @@
                     
                     var x = F-a * Math.cosh(t);
                     var y = -b * Math.sinh(t);        
-                    
-                   /* var x = F-(a * 1/Math.cos(t));
-                    var y = b * Math.tan(t);*/
-                    
-                    
-                    console.log(t, x, y);
-                    
-                    d += x + " " + y +" ";
+
+                    d += x + " " + y + " ";
                 }
                 
-                console.log(d);
                 $("#hyperbola").attr("d", d);
                 $("#parkOrbit").attr("r", r0)
                 
@@ -142,13 +271,110 @@
                 $("#LnDir").attr("transform",` rotate(${-LnPlanet})`);
                
             }
-            
-            $(document).ready(function(){
-                params = new URLSearchParams(location.search);
-                var origin = params.get("a");
-                var destination = params.get("alpha");
-                hyp();
+
+            function setActiveField(id) {
+
+                //deactive current active field
+                $(activeField.buttonLabel).addClass("fn");
+                $(activeField.buttonLabel).removeClass("fnInverse");
+                $("#activeButton").attr("fill", "none");
+                activeField.value = $(activeField.receiver).val();
+                    
+                if (id == "none" || id == activeField.id) {
+                    activeField = {};
+                    return;
+                }
+
+                activeField = fields[id];
+                //$(activeField.receiver).focus();
+
+                $(activeField.receiver).val("");
+                activeField.value = NaN;
+                calculateEjectionOrbit();
                 
+                $(activeField.buttonLabel).addClass("fnInverse");
+                $(activeField.buttonLabel).removeClass("fn");
+                $("#activeButton").attr("x", activeField.x-50/2).attr("fill", "greenyellow");
+                
+                window.scroll(0,400);
+
+            }
+
+            function keyPress(event, k) {
+                //event is mouse event from button click
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (k == "E") {
+                    setActiveField('none');
+                    return;
+                }
+                
+                if (k=="B"){
+                    let field = $(activeField.receiver);
+                    let newVal =  field.val().slice(0,-1);
+                    field.val(newVal);
+                    console.log(newVal);
+                    return;
+                }
+
+                var receiver = $(activeField.receiver);
+                receiver.val(receiver.val() + k);
+
+                //var keyEvent = $.Event("keypress");
+                //keyEvent.key = "A";
+                //keyEvent.which = "A";
+
+                //receiver.trigger(keyEvent);
+
+                
+                //$('#myInputId').trigger(jQuery.Event('keypress', { keycode: 13 }));
+
+                //document.dispatchEvent(new KeyboardEvent('keypress', { 'key': "X" }));
+                //activeOutput.val(activeOutput.val() + k);
+
+                //receiver.trigger(new Event('keypress', { keyCode: k }));
+                console.log(receiver.val());
+            }
+
+            function updateDisplay(id, value) {
+                console.log(id);
+                console.log(fields[id]);
+
+                let field = fields[id];
+                $(field.receiver).text(value.toFixed(2));
+            }
+
+            function initializeEjectOrbit() {
+
+                fields["ap"] = { id: "ap", label: 'AP', value: 200, x: -150, buttonLabel: '#fnAP', receiver: "input[name='ap']" };
+                fields["pe"] = { id: "pe", label: 'PE', value: 200, x: -90, buttonLabel: '#fnPE', receiver: "input[name='pe']" };
+
+                fields["ea"] = { id: "ea", label: "EJECTION ANGLE", value: 0, x: 0, buttonLable: '', receiver: "#ejectionAngle" };
+                fields["dv"] = { id: "dv", label: "DELTA V", value: 0, x: 0, buttonLable: '', receiver: "#deltaV" };
+
+                params = new URLSearchParams(location.search);
+
+                originName = params.get("origin");
+                destinationName = params.get("destination");
+                t = params.get("t");
+                vSOI = params.get("vSOI");
+
+                origin = planets[originName];
+                destination = planets[destinationName];
+
+                txOrbit = new TransferOrbit(origin, destination)
+                txOrbit.update(t);
+
+                parkOrbit = new Orbit(200000 + origin.r, 200000 + origin.r, 0, 0, origin.mu);
+                calculateEjectionOrbit();
+            }
+
+            $(document).ready(function () {
+
+                hyp();
+                getPlanetsXML(initializeEjectOrbit);
+
             })
             
         </script>
@@ -163,6 +389,10 @@
                     fill: greenyellow;
                     width: 60px;
                 }
+                .fnInverse {
+                    background-color: greenyellow;
+                    fill: #131339;
+                }
             </style>
 
             <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
@@ -174,9 +404,9 @@
             <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
 
             <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-            <text class="fn" text-anchor="middle" x="-90" y="45"></text>
-            <text class="fn" text-anchor="middle" x="-30" y="45"></text>
-            <text class="fn" text-anchor="middle" x="30" y="45"></text>
+            <text class="fn" text-anchor="middle" x="-90" y="45">MEAN</text>
+            <text class="fn" text-anchor="middle" x="-30" y="45">DETAIL</text>
+            <text class="fn" text-anchor="middle" x="30" y="45">PHASE</text>
             <text class="fn" text-anchor="middle" x="90" y="45">PREV</text>
             <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
 
@@ -214,53 +444,71 @@
                 </g>
 
             </svg>
+         
         <!--</div>-->
+            <div id="bottomFrameContainer">
+                <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <style>
+                        .fn {
+                            font-family: "VT323", "Lucida Console", "monospace";
+                            font-size: 12pt;
+                            fill: greenyellow;
+                            width: 60px;
+                        }
 
-        <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <style>
-                .fn {
-                    font-family: "VT323", "Lucida Console", "monospace";
-                    font-size: 10pt;
-                    fill: greenyellow;
-                    width: 60px;
-                }
-            </style>
+                        .fnInverse {
+                            font-family: "VT323", "Lucida Console", "monospace";
+                            font-size: 12pt;
+                            background-color: greenyellow;
+                            fill: #131339;
+                        }
+                    </style>
 
-            <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+                    <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
 
-            <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
-            <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
-            <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
-            <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
-            <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
+                    <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
+                    <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
+                    <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
+                    <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
+                    <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
 
-            <text class="fn" text-anchor="middle" x="-150" y="15">AP</text>
-            <text class="fn" text-anchor="middle" x="-90" y="15">PE</text>
-            <text class="fn" text-anchor="middle" x="-30" y="15">LAN</text>
-            <text class="fn" text-anchor="middle" x="30" y="15">ARG PE</text>
-            <text class="fn" text-anchor="middle" x="90" y="15">UT</text>
-            <text class="fn" text-anchor="middle" x="150" y="15">T-PE</text>
+                    <rect id="activeButton" x="-175" y="0" height="20" width="50" fill="none" />
 
-            <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-        </svg>
+                    <text class="fn" id="fnAP" text-anchor="middle" x="-150" y="15">ALT</text>
+                    <text class="fn" id="fnPE" text-anchor="middle" x="-90" y="15"></text>
+                    <text class="fn" id="LAN" text-anchor="middle" x="-30" y="15"></text>
+                    <text class="fn" id="argPe" text-anchor="middle" x="30" y="15"></text>
+                    <text class="fn" id="tPE" text-anchor="middle" x="90" y="15"></text>
+                    <text class="fn" id="UT" text-anchor="middle" x="150" y="15">CALC</text>
 
+                    <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('ap')" />
+                    <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('pe')" />
+                    <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                    <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                    <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                    <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calculateEjectionOrbit()" />
+                </svg>
+            </div>
+        
         <div id="displayContainer">
 
-            <div id="divAP" class="paramDisp">APOAPSIS<br><div class="display"><input name="ap" type="text" value="0000" style="width:100"> km</div> </div>
+            <div id="divAP" class="paramDisp">ALT/APOAPSIS<br>
+                <div class="display">
+                    <input name="ap" type="text" value="100" style="width:100px" style="pointer-events: none;">
+                    <span id="apOut"></span>
+                km</div> 
+            </div>
 
-            <div id="divPE" class="paramDisp">PERIAPSIS<div class="display"><input name="pe" type="text" value="0000" style="width:100"> km</div></div>
+            <div id="divPE" class="paramDisp paramDisp_inactive">PERIAPSIS<div class="display">
+                <input disabled name="pe" type="text" value="000000" style="width:100px" onblur="setActiveField('none')"> km</div>
+            </div>
 
-            <div class="paramDisp">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>
-            <div class="paramDisp">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
-            <div class="paramDisp">LAN<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
-            <div class="paramDisp">ARG PE<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
+            <div class="paramDisp_hidden">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>
+            <div class="paramDisp_hidden">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
+            <div class="paramDisp_hidden">LAN<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
+            <div class="paramDisp_hidden">ARG PE<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
 
-            <div class="paramDisp">
+            <div class="paramDisp_hidden">
                 UT<div class="display">
                     y:<input name="tPe" type="text" value="00" style="width:25">
                     d:<input name="tPe" type="text" value="000" style="width:25">
@@ -268,7 +516,7 @@
                 </div>
             </div>
 
-            <div class="paramDisp">
+            <div class="paramDisp_hidden">
                 T TO PE<div class="display">
                     y:<input name="tPe" type="text" value="00" style="width:25">
                     d:<input name="tPe" type="text" value="000" style="width:25">
@@ -276,26 +524,26 @@
                 </div>
             </div>
 
-            <div class="paramDisp">EJECTION ANGLE<div class="display"><span>000.0</span> deg</div></div>
-            <div class="paramDisp">DELTA V<div class="display"><span>0000.0</span> m/s</div></div>
+            <div class="paramDisp">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
+            <div class="paramDisp">DELTA V<div class="display"><span id="deltaV">0000.0</span> m/s</div></div>
 
         </div>
 
         <div id="keyboard">
-            <button>1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>4</button>
-            <button>5</button>
-            <button>B</button>
-            <button>U</button>
-            <button>9</button>
-            <button>8</button>
-            <button>7</button>
-            <button>6</button>
-            <button>0</button>
-            <button>.</button>
-            <button>E</button>
+            <button id="key1" onclick="keyPress(event,1)">1</button>
+            <button id="key2" onclick="keyPress(event,2)">2</button>
+            <button id="key3" onclick="keyPress(event,3)">3</button>
+            <button id="key4" onclick="keyPress(event,4)">4</button>
+            <button id="key5" onclick="keyPress(event,5)">5</button>
+            <button id="keyB" onclick="keyPress(event,'B')">B</button>
+            <button id="keyU" onclick="keyPress(event,'U')">U</button>
+            <button id="key6" onclick="keyPress(event,6)">6</button>
+            <button id="key7" onclick="keyPress(event,7)">7</button>
+            <button id="key8" onclick="keyPress(event,8)">8</button>
+            <button id="key9" onclick="keyPress(event,9)">9</button>
+            <button id="key0" onclick="keyPress(event,0)">0</button>
+            <button id="key." onclick="keyPress(event,'.')">.</button>
+            <button id="keyE" onclick="keyPress(event,'E')">E</button>
         </div>
     </body> 
 </html>
