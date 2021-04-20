@@ -74,7 +74,7 @@
             grid-row-gap: 5px;
             grid-column-gap: 10px;
             justify-content: center;
-            background-color: 484f5b;
+            background-color: #484f5b;
             border: 1px solid black;
             border-radius: 8px;
             padding: 5px;
@@ -253,7 +253,14 @@
         }
 
         function next() {
-            qryStr = `?originPlanet=${originPlanet}&destinationPlanet=${destinationPlanet}`
+            if (i != 2) return;
+
+            let y = $("input[name='UT_y']").val();
+            let d = $("input[name='UT_d']").val();
+            //let h = $("#UT_h").val();
+            //let m = $("#UT_m").val();
+
+            qryStr = `?originPlanet=${originPlanet}&destinationPlanet=${destinationPlanet}&y=${y}&d=${d}`;
             location = "transferPosition.html" + qryStr;
         }
 
@@ -262,14 +269,22 @@
             event.preventDefault();
             event.stopPropagation();
 
+            let theField = $(activeField.outputQry);
+            let maxLen = theField.attr("maxlength");
+            let curVal = theField.val();
+            let curLen = curVal.length;
+
             if (k == "E") {
                 //setActiveField('none');
+                if (curLen < maxLen) {
+                    curVal = curVal.concat("0".repeat(maxLen-curLen),curVal)
+                }
                 activeField.callback();
                 return;
             }
 
-            let theField = $(activeField.outputQry);
-            let curVal = theField.val();
+            //delete curval if lenth at max length
+            if (curLen == maxLen) curVal = "";
 
             if (k == "B") {
                 var newVal = curVal.slice(0, -1);
@@ -278,6 +293,8 @@
             }
 
             theField.val(newVal);
+
+            if (newVal.length >= maxLen) activeField.callback();
         }
 
         function setActiveField(id) {
@@ -308,14 +325,13 @@
 
         function buttonPress(index) {
 
-            console.log(buttons);
-
-            $("#fn" + activeButton).removeClass("activeFn").addClass("fn");
+            let buttonLabelID = "#fn" + activeButton;
+            $(buttonLabelID).removeClass("activeFn").addClass("fn");
             $("#activeLabel").removeClass("activeFn").addClass("fn");
             
 
             if (index != "none") {
-
+                activeButton = index;
                 $("#fn" + index).addClass("activeFn").removeClass("fn");
 
                 let x = Number(buttons[index].x - buttons[index].width / 2)
@@ -323,10 +339,10 @@
 
                 $("#activeLabel").attr("x", x).addClass("activeFn");
                 buttons[index].fn();
+
                 
             }
-
-            activeButton = index;
+            
         }
 
         function init() {
@@ -376,7 +392,7 @@
                 if (i == 1) {
                     // setting origin
                     originPlanet = name
-                    $("#fnStr").text("TRANSFER : " + originPlanet.toUpperCase() + ": SELECT DESTINATION");
+                    $("#fnStr").html("TRANSFER : " + originPlanet.toUpperCase() + " : <span class='activefn'>SELECT DESTINATION</span>");
 
                     $("#originSelected").attr("cx", $(this).attr("cx"));
                     $("#originSelected").attr("cy", $(this).attr("cy"));
@@ -438,7 +454,7 @@
 
     <div id="viewer" width="360" margin-left="auto" onwheel="zoomWheel(event)" onpointerdown="toggleMouseDown(event)" onpointerup="toggleMouseDown(event)"  onmouseleave="boolDown=false" ontouchmove="pan(event)" ontouchend="touchUp(event);boolDown=true">
         <div id="onScreenText">
-            <p id="fnStr">TRANSFER: SELECT ORIGIN</p>
+            <p id="fnStr">TRANSFER : <span class='activefn'>SELECT ORIGIN</span></p>
         </div>
         <svg id="solarSystem" height="360" width="360" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
