@@ -3,130 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-    <style>
-
-        body {
-            width: 360px;
-            margin: auto;
-            background-color: #22324d;
-            touch-action: manipulation;
-            //prevent zoom on double tap
-        }
-
-        #viewer {
-            position: relative;
-            width: 360px;
-            border-width: 10px;
-            border-color: red;
-            background-color: black;
-            touch-action: none;
-        }
-
-        #onScreenText {
-            position: absolute;
-            margin-top: 0px;
-            margin-left: 20px;
-            color: greenyellow;
-            font-family: "VT323";
-            font-size: 12pt;
-        }
-
-        .orbit {
-            fill: none;
-            opacity: 1;
-        }
-
-        svg {
-            background-color: #131339;
-            vector-effect: non-scaling-stroke;
-        }
-
-        
-        .fn {
-            font-family: "VT323", "Lucida Console", "monospace";
-            font-size: 12pt;
-            fill: greenyellow;
-            
-            width: 60px;
-        }
-
-        .activeFn {
-            fill: black;
-            font-family: "VT323", "Lucida Console", "monospace";
-            font-size: 12pt;
-            color: black;
-            background-color: greenyellow;
-        }
-
-        rect.fn {
-            fill: #131339;
-        }
-        rect.activeFn{
-            fill: greenyellow;
-        }
-        
-
-        #displayContainer {
-            display: grid;
-            width: 350;
-            grid-template-columns: 150px 150px;
-            grid-template-rows: 50 50 50 50 50;
-            grid-row-gap: 5px;
-            grid-column-gap: 10px;
-            justify-content: center;
-            background-color: #484f5b;
-            border: 1px solid black;
-            border-radius: 8px;
-            padding: 5px;
-        }
-
-        .paramDisp {
-            color: white;
-            overflow: hidden;
-            padding: 5px;
-            border: 1px solid black;
-            background-color: #858c98;
-            border-radius: 3px;
-        }
-
-        .display, input {
-            background-color: darkslategrey;
-            text-align: right;
-            color: greenyellow;
-            font-family: "VT323";
-            font-size: 12pt;
-            border-radius: 2px;
-        }
-
-        .paramDisp_hidden {
-            display: none;
-        }
-
-        .paramDisp_inactive {
-            color: #777;
-        }
-
-        div.paramDisp_inactive .display, div.paramDisp_inactive input {
-            background-color: darkslategrey;
-            text-align: right;
-            color: black;
-            font-family: "VT323";
-            font-size: 12pt;
-            border-radius: 2px;
-        }
-
-        input {
-            width: auto;
-            border: none;
-        }
-
-        button {
-            height: 1.2cm;
-            width: 1.2cm;
-            margin: 1px;
-        }
-
-    </style>
+    <link rel="stylesheet" href="multiFunctionDisplay.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
@@ -138,14 +15,14 @@
 
         var boolDown;
         var mouseDown;
-        
+
         var lastD;
         var lastTouch;
         var lastX;
         var lastY;
 
         var buttons = {};
-        var fields={};
+        var fields = {};
 
         var activeButton;
         var activeField;
@@ -207,7 +84,7 @@
         function pan(event) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            
+
             //if(!mouseDown.active) return;
             //if (boolDown) {
             if (event.touches.length == 1) {
@@ -222,12 +99,12 @@
 
                     viewBox.x -= dx;
                     viewBox.y -= dy;
-                    
+
                 }
 
                 lastX = x;
                 lastY = y;
-                
+
             } else {
 
                 let x0 = event.touches[0].clientX;
@@ -245,10 +122,10 @@
 
                 lastD = d;
                 //$("#fnStr").text(deltaD);
-            
-                
+
+
             }
-            
+
             //console.log(event.offsetX, event.movementX);
         }
 
@@ -277,7 +154,7 @@
             if (k == "E") {
                 //setActiveField('none');
                 if (curLen < maxLen) {
-                    curVal = curVal.concat("0".repeat(maxLen-curLen),curVal)
+                    curVal = curVal.concat("0".repeat(maxLen - curLen), curVal)
                 }
                 activeField.callback();
                 return;
@@ -306,7 +183,7 @@
                 $(activeField.outputQry).removeClass("activeFn").addClass("fn");
             }
 
-            if (id == "none" ) {
+            if (id == "none") {
                 //activeField.callback();
                 $(activeField.outputQry).removeClass("activeFn").addClass("fn");
                 activeField = {};
@@ -328,21 +205,21 @@
             let buttonLabelID = "#fn" + activeButton;
             $(buttonLabelID).removeClass("activeFn").addClass("fn");
             $("#activeLabel").removeClass("activeFn").addClass("fn");
-            
+
 
             if (index != "none") {
                 activeButton = index;
                 $("#fn" + index).addClass("activeFn").removeClass("fn");
 
                 let x = Number(buttons[index].x - buttons[index].width / 2)
-                console.log(buttons[index].x, buttons[index].width,x);
+                console.log(buttons[index].x, buttons[index].width, x);
 
                 $("#activeLabel").attr("x", x).addClass("activeFn");
                 buttons[index].fn();
 
-                
+
             }
-            
+
         }
 
         function init() {
@@ -354,17 +231,17 @@
             let fn5 = () => { zoom(-100); buttonPress("none") };
 
             buttons["b0"] = { x: -150, width: 60, label: "UT", fn: fn0 };
-            buttons["b4"] = { x: 90, width: 60,  label: "ZOOM -", fn: fn4 };
+            buttons["b4"] = { x: 90, width: 60, label: "ZOOM -", fn: fn4 };
             buttons["b5"] = { x: 150, width: 60, label: "ZOOM +", fn: fn5 };
 
 
             let cb0 = () => { setActiveField("UT_d") };
             let cb1 = () => { setActiveField("UT_h") };
             let cb2 = () => { setActiveField("UT_m") };
-            let cb3 = () => { setActiveField("none"); buttonPress("none")   };
-            
+            let cb3 = () => { setActiveField("none"); buttonPress("none") };
+
             fields["UT_m"] = { value: 00, outputQry: "input[name='UT_m']", button: 0, callback: cb3 };
-            fields["UT_h"] = { value: 0 , outputQry: "input[name='UT_h']", button: 0, callback: cb2 };
+            fields["UT_h"] = { value: 0, outputQry: "input[name='UT_h']", button: 0, callback: cb2 };
             fields["UT_d"] = { value: 000, outputQry: "input[name='UT_d']", button: 0, callback: cb1 };
             fields["UT_y"] = { value: 000, outputQry: "input[name='UT_y']", button: 0, callback: cb0 };
 
@@ -412,17 +289,18 @@
                     $("#destSelected").attr("cx", $(this).attr("cx"));
                     $("#destSelected").attr("cy", $(this).attr("cy"));
                     $("#destSelected").attr("fill", "red");
-                    
+
                 }
 
                 console.log(i, originPlanet, destinationPlanet);
             })
 
-            
+
         })
 
     </script>
 
+    
 </head>
 
 <body ontouchup="touchUp()">
@@ -452,12 +330,14 @@
         <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="next()" />
     </svg>
 
-    <div id="viewer" width="360" margin-left="auto" onwheel="zoomWheel(event)" onpointerdown="toggleMouseDown(event)" onpointerup="toggleMouseDown(event)"  onmouseleave="boolDown=false" ontouchmove="pan(event)" ontouchend="touchUp(event);boolDown=true">
+    <div id="mfdScreen" width="360" margin-left="auto" onwheel="zoomWheel(event)" onpointerdown="toggleMouseDown(event)" onpointerup="toggleMouseDown(event)"  onmouseleave="boolDown=false" ontouchmove="pan(event)" ontouchend="touchUp(event);boolDown=true">
+
         <div id="onScreenText">
             <p id="fnStr">TRANSFER : <span class='activefn'>SELECT ORIGIN</span></p>
         </div>
-        <svg id="solarSystem" height="360" width="360" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
+        <svg id="solarSystem" height="360" width="360" viewBox="-1100 -1100 1900 1900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            
             <circle id="originSelected" cx="0" cy="0" r="25" fill="none" />
             <circle id="destSelected" cx="0" cy="0" r="25" fill="none" />
 
@@ -465,9 +345,9 @@
 
             <!-- arc path rx ry angle large-angle-flag sweep-flag (1-cw; 0-ccw) end_x endy-->
             <!-- M ap.x, ap.y
-            A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
+    A s.maj.axis s.min.axis lonPe 0 0 pe.x pe.y -->
             <!-- M pe.x pe.y
-            A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
+    A s.maj.axis s.min.axis lonPe 0 0 ap.x ap.y -->
 
             <path class="orbit" id="mohoOrbit" stroke="peachpuff" d="M   -5.50   62.92
                                                         A 52.63   51.57  -265    0 0    3.67  -41.95
@@ -489,17 +369,17 @@
                                                         A 687.74 686.87   -232    0 0 -444.58  569.04
                                                         A 687.74 686.87   -232    1 0  348.91 -552.57 " />
 
-            <path class="orbit" id="eelooOrbit" d="M -729.89 -869.84 A 901.19 870.20  -130    0 0 428.66 510.86
-                                                        A 901.19 870.20  -130    0 0 -729.89 -869.84 " stroke="gray" />
+            <path class="orbit" id="eelooOrbit" stroke="gray" d="M -729.89 -869.84 A 901.19 870.20  -130    0 0 428.66 510.86
+                                                        A 901.19 870.20  -130    0 0 -729.89 -869.84 " />
 
 
             <!--<circle class="planet" id="Moho"   cx="0" cy="0" r="18" fill="peachpuff"/>
-            <circle class="planet" id="Eve"    cx="0" cy="0" r="18" fill="purple"/>
-            <circle class="planet" id="Kerbin" cx="0" cy="0" r="18" fill="cyan"/>
-            <circle class="planet" id="Duna"   cx="0" cy="0" r="18" fill="crimson"/>
-            <circle class="planet" id="Dres"   cx="0" cy="0" r="18" fill="#a44128"/>
-            <circle class="planet" id="Jool"   cx="0" cy="0" r="18" fill="green" />
-            <circle class="planet" id="Eeloo"  cx="0" cy="0" r="18" fill="gray"/>-->
+    <circle class="planet" id="Eve"    cx="0" cy="0" r="18" fill="purple"/>
+    <circle class="planet" id="Kerbin" cx="0" cy="0" r="18" fill="cyan"/>
+    <circle class="planet" id="Duna"   cx="0" cy="0" r="18" fill="crimson"/>
+    <circle class="planet" id="Dres"   cx="0" cy="0" r="18" fill="#a44128"/>
+    <circle class="planet" id="Jool"   cx="0" cy="0" r="18" fill="green" />
+    <circle class="planet" id="Eeloo"  cx="0" cy="0" r="18" fill="gray"/>-->
 
             <circle class="planet" id="Moho" cx="-5.50" cy="62.92" r="18" fill="peachpuff" />
             <circle class="planet" id="Eve" cx="-95.93" cy="25.70" r="18" fill="purple" />
@@ -511,24 +391,24 @@
 
 
             <!-- com circles
-            <circle cx=0 cy=0 r=80 fill="none" stroke="yellow"/>
-            <circle cx=56.6 cy=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cy=56.6 cx=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cy=-56.6 cx=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cx=-56.6 cy=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cx=0 cy=0 r=80 fill="none" stroke="yellow"/>
+    <circle cx=56.6 cy=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cy=56.6 cx=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cy=-56.6 cx=56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cx=-56.6 cy=-56.6 r=55 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
 
-            <circle cx=56.6 cy=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cy=56.6 cx=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cy=-56.6 cx=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            <circle cx=-56.6 cy=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
-            -->
-           <!-- <animateMotion xlink:href="#Moho" dur="14.44s" repeatCount="indefinite"> <mpath xlink:href="#mohoOrbit"/>   </animateMotion>
-            <animateMotion xlink:href="#Eve" dur="36.87s" repeatCount="indefinite">   <mpath xlink:href="#eveOrbit"/>    </animateMotion>
-            <animateMotion xlink:href="#Kerbin" dur="60s" repeatCount="indefinite">  <mpath xlink:href="#kerbinOrbit"/> </animateMotion>
-            <animateMotion xlink:href="#Duna" dur="112.88s" repeatCount="indefinite"> <mpath xlink:href="#dunaOrbit"/>   </animateMotion>
-            <animateMotion xlink:href="#Dres" dur="312.23" repeatCount="indefinite">  <mpath xlink:href="#dresOrbit"/>   </animateMotion>
-            <animateMotion xlink:href="#Jool" dur="682.31s" repeatCount="indefinite"> <mpath xlink:href="#joolOrbit"/>   </animateMotion>
-            <animateMotion xlink:href="#Eeloo" dur="1023s" repeatCount="indefinite">  <mpath xlink:href="#eelooOrbit"/>  </animateMotion>-->
+    <circle cx=56.6 cy=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cy=56.6 cx=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cy=-56.6 cx=56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    <circle cx=-56.6 cy=-56.6 r=155 fill="none" stroke="yellow" stroke-dasharray="3 5 1 5 3"/>
+    -->
+            <!-- <animateMotion xlink:href="#Moho" dur="14.44s" repeatCount="indefinite"> <mpath xlink:href="#mohoOrbit"/>   </animateMotion>
+     <animateMotion xlink:href="#Eve" dur="36.87s" repeatCount="indefinite">   <mpath xlink:href="#eveOrbit"/>    </animateMotion>
+     <animateMotion xlink:href="#Kerbin" dur="60s" repeatCount="indefinite">  <mpath xlink:href="#kerbinOrbit"/> </animateMotion>
+     <animateMotion xlink:href="#Duna" dur="112.88s" repeatCount="indefinite"> <mpath xlink:href="#dunaOrbit"/>   </animateMotion>
+     <animateMotion xlink:href="#Dres" dur="312.23" repeatCount="indefinite">  <mpath xlink:href="#dresOrbit"/>   </animateMotion>
+     <animateMotion xlink:href="#Jool" dur="682.31s" repeatCount="indefinite"> <mpath xlink:href="#joolOrbit"/>   </animateMotion>
+     <animateMotion xlink:href="#Eeloo" dur="1023s" repeatCount="indefinite">  <mpath xlink:href="#eelooOrbit"/>  </animateMotion>-->
             <!-- mean orbit -->
             <!--            <circle id="mohoSMA"  cx="0" cy="0" r="52.63" fill=none stroke="white"/>-->
             <!--            <circle id="eveSMA"   cx="0" cy="0" r="98.33" fill=none stroke="white"/>-->
@@ -543,8 +423,8 @@
             <!--            <circle id="joolSMA"  cx="-21.17" cy="27.10" r="687.74" fill=none stroke="white"/>-->
             <!--            <circle id="eelooSMA" cx="-150.61" cy="-179.49" r="901.19" fill=none stroke="white"/>-->
             <!-- <circle cx="-21.17" cy="27.10" r="687.74" fill="none" stroke="yellow" />
-            <circle cx="0" cy="0" r=722.12 stroke="red" fill="none"/>
-            <circle cx="0" cy="0" r=653.35 stroke="red"fill="none"/>-->
+    <circle cx="0" cy="0" r=722.12 stroke="red" fill="none"/>
+    <circle cx="0" cy="0" r=653.35 stroke="red"fill="none"/>-->
 
 
         </svg>
@@ -577,7 +457,7 @@
         <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b5')" />
     </svg>
 
-    <div id="displayContainer" width=500>
+    <div id="displayContainer">
 
         <div class="paramDisp">
             UT<div class="display">

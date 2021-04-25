@@ -4,104 +4,8 @@
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
         
-<!--        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">-->
-        
-        <style>
-            body{
-                width: 360px;
-                margin: auto;
-                background-color: #22324d;
-                touch-action: manipulation;
-                //prevent zoom on double tap
-            }
-            
-            #divViewer {
-                width: 350px;
-                height: 350px;
-                padding: 5px;
-                background-color: #131339;
-                border: 13px solid #484f5b;
-                border-radius: 10px;
-                margin-bottom: 10px;
-            }
-            
-            svg *{
-                vector-effect: non-scaling-stroke;
-            }
+        <link rel="stylesheet" href="multiFunctionDisplay.css">
 
-            .mfdFrame {
-                background-color: #131339;
-            }
-
-            #displayContainer{
-                display: grid;
-                width: 350;
-                grid-template-columns: 150px 150px;
-                grid-template-rows: 50 50 50 50 50;
-                grid-row-gap: 5px;
-                grid-column-gap: 10px;
-                justify-content: center;
-                background-color: 484f5b;
-                border: 1px solid black;
-                border-radius: 8px;
-                padding:5px;
-            }
-            
-            .paramDisp{
-                color: white;
-                overflow: hidden;
-                padding: 5px;
-                border: 1px solid black;
-                background-color: #858c98;
-                border-radius: 3px;
-            }
-            
-            .display, input{
-                background-color: darkslategrey;
-                
-                text-align: right;
-                color: greenyellow;
-                font-family: "VT323";
-                font-size: 12pt;
-                border-radius: 2px;
-                
-            }
-
-            .paramDisp_hidden {
-                display: none;
-            }
-
-            .paramDisp_inactive{
-                color: #777;
-            }
-
-            div.paramDisp_inactive .display, div.paramDisp_inactive input {
-                background-color: darkslategrey;
-                text-align: right;
-                color: black;
-                font-family: "VT323";
-                font-size: 12pt;
-                border-radius: 2px;
-            }
-
-            input{
-                width:auto;
-                border: none;
-            }
-
-            span{
-                width: 130px;
-                height: 20px;
-            }
-            
-            button{
-                height:1.2cm;
-                width: 1.2cm;
-                margin: 1px;
-            }
-
-        </style>
-        
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="orbitalMechanics.js"></script>
 <!--        <script src="planetPositions.js"></script>-->
@@ -381,126 +285,129 @@
         
     </head>
     <body>
-        <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <style>
-                .fn {
-                    font-family: "VT323", "Lucida Console", "monospace";
-                    font-size: 10pt;
-                    fill: greenyellow;
-                    width: 60px;
-                }
-                .fnInverse {
-                    background-color: greenyellow;
-                    fill: #131339;
-                }
-            </style>
 
-            <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
+        <div id="mfd">
 
-            <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
-            <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
-            <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
-            <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
-            <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
+            <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+               
+                <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
 
-            <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-            <text class="fn" text-anchor="middle" x="-90" y="45">MEAN</text>
-            <text class="fn" text-anchor="middle" x="-30" y="45">DETAIL</text>
-            <text class="fn" text-anchor="middle" x="30" y="45">PHASE</text>
-            <text class="fn" text-anchor="middle" x="90" y="45">PREV</text>
-            <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
+                <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
+                <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
+                <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
+                <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
+                <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
 
-            <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-        </svg>
+                <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
+                <text class="fn" text-anchor="middle" x="-90" y="45"></text>
+                <text class="fn" text-anchor="middle" x="-30" y="45"></text>
+                <text class="fn" text-anchor="middle" x="30" y="45"></text>
+                <text class="fn" text-anchor="middle" x="90" y="45"></text>
+                <text class="fn" text-anchor="middle" x="150" y="45"></text>
 
-        <!--<div id="divViewer">-->
-            <svg class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-
-                <!-- PRIMARY -->
-                <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
-                <!--            <path id="orbit_origin" stroke="gray" fill="none" stroke-dashArray="3 2 3"/>-->
-
-                <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none" />
-
-                <line id="sunDir" x1=0 y1=0 x2=-500 y2=0 stroke="orange" stroke-width="3" />
-                <line id="sunDirOut" x1="0" y1="0" x2="500" y2="0" stroke="black" stroke-opacity=".5" />
-                <line id="LnDir" x1="0" y1="0" x2="200" y2="0" stroke="black" stroke-opacity=".1" />
-
-                <line id="prograde" x1="0" y1="0" x2="0" y2="-300" stroke="green" stroke-opacity=".4" />
-
-                <g id="hyperbolaGroup">
-                    <path id="hyperbola" d="M 93.01 0 L
-                         92.30 -7.25   90.14 -14.72 86.49 -22.64"
-                          stroke="white" fill="none" />
-
-                    <line id="axis" x1=0 y1=0 x2=200 y2=0 stroke="grey" stroke-dashArray="3 2 3" />
-                    <line id="asymptote" x1="140" y1="0" x2="46.50" y2="-131.53" stroke="gray" stroke-width="1" stroke-dashArray="3 2 3" />
-                    <circle id="peMarker" cx="87.69" cy="0" r="5" stroke="red" fill="none" />
-                </g>
-
+                <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
             </svg>
-         
-        <!--</div>-->
-            <div id="bottomFrameContainer">
-                <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                    <style>
-                        .fn {
-                            font-family: "VT323", "Lucida Console", "monospace";
-                            font-size: 12pt;
-                            fill: greenyellow;
-                            width: 60px;
-                        }
 
-                        .fnInverse {
-                            font-family: "VT323", "Lucida Console", "monospace";
-                            font-size: 12pt;
-                            background-color: greenyellow;
-                            fill: #131339;
-                        }
-                    </style>
+            <div id="mfdScreen">
 
-                    <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+                <div id="onScreenText">
+                    <p id="fnStr">Ejection        : <span class='activefn'></span></p>
+                    <p id="fnStr">Plane change    : <span class='activefn'></span></p>
+                    <p id="fnStr">Marginal Capture: <span class='activefn'></span></p>
+                    <p id="fnStr">Circulerize     : <span class='activefn'></span></p>
+                </div>
 
-                    <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
-                    <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
-                    <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
-                    <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
-                    <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
+                <svg display="none" class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-                    <rect id="activeButton" x="-175" y="0" height="20" width="50" fill="none" />
+                    <!-- PRIMARY -->
+                    <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
 
-                    <text class="fn" id="fnAP" text-anchor="middle" x="-150" y="15">ALT</text>
-                    <text class="fn" id="fnPE" text-anchor="middle" x="-90" y="15"></text>
-                    <text class="fn" id="LAN" text-anchor="middle" x="-30" y="15"></text>
-                    <text class="fn" id="argPe" text-anchor="middle" x="30" y="15"></text>
-                    <text class="fn" id="tPE" text-anchor="middle" x="90" y="15"></text>
-                    <text class="fn" id="UT" text-anchor="middle" x="150" y="15">CALC</text>
+                    <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none" />
 
-                    <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('ap')" />
-                    <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('pe')" />
-                    <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-                    <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-                    <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-                    <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calculateEjectionOrbit()" />
+                    <line id="sunDir" x1=0 y1=0 x2=-500 y2=0 stroke="orange" stroke-width="3" />
+                    <line id="sunDirOut" x1="0" y1="0" x2="500" y2="0" stroke="black" stroke-opacity=".5" />
+                    <line id="LnDir" x1="0" y1="0" x2="200" y2="0" stroke="black" stroke-opacity=".1" />
+
+                    <line id="prograde" x1="0" y1="0" x2="0" y2="-300" stroke="green" stroke-opacity=".4" />
+
+                    <g id="hyperbolaGroup">
+                        <path id="hyperbola" d="M 93.01 0 L
+                             92.30 -7.25   90.14 -14.72 86.49 -22.64"
+                              stroke="white" fill="none" />
+
+                        <line id="axis" x1=0 y1=0 x2=200 y2=0 stroke="grey" stroke-dashArray="3 2 3" />
+                        <line id="asymptote" x1="140" y1="0" x2="46.50" y2="-131.53" stroke="gray" stroke-width="1" stroke-dashArray="3 2 3" />
+                        <circle id="peMarker" cx="87.69" cy="0" r="5" stroke="red" fill="none" />
+                    </g>
+
                 </svg>
+
             </div>
-        
+
+            <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <style>
+                    .fn {
+                        font-family: "VT323", "Lucida Console", "monospace";
+                        font-size: 12pt;
+                        fill: greenyellow;
+                        width: 60px;
+                    }
+
+                    .fnInverse {
+                        font-family: "VT323", "Lucida Console", "monospace";
+                        font-size: 12pt;
+                        background-color: greenyellow;
+                        fill: #131339;
+                    }
+                </style>
+
+                <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+
+                <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
+                <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
+                <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
+                <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
+                <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
+
+                <rect id="activeButton" x="-175" y="0" height="20" width="50" fill="none" />
+
+                <text class="fn" id="fnAP" text-anchor="middle" x="-150" y="15">ALT</text>
+                <text class="fn" id="fnPE" text-anchor="middle" x="-90" y="15"></text>
+                <text class="fn" id="LAN" text-anchor="middle" x="-30" y="15"></text>
+                <text class="fn" id="argPe" text-anchor="middle" x="30" y="15"></text>
+                <text class="fn" id="tPE" text-anchor="middle" x="90" y="15"></text>
+                <text class="fn" id="UT" text-anchor="middle" x="150" y="15">CALC</text>
+
+                <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('ap')" />
+                <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="setActiveField('pe')" />
+                <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+                <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calculateEjectionOrbit()" />
+            </svg>
+
+        </div>
+
         <div id="displayContainer">
 
-            <div id="divAP" class="paramDisp">ALT/APOAPSIS<br>
+            <div id="divAP" class="paramDisp">
+                ALT/APOAPSIS<br>
                 <div class="display">
                     <input name="ap" type="text" value="100" style="width:100px" style="pointer-events: none;">
                     <span id="apOut"></span>
-                km</div> 
+                    km
+                </div>
             </div>
 
-            <div id="divPE" class="paramDisp paramDisp_inactive">PERIAPSIS<div class="display">
-                <input disabled name="pe" type="text" value="000000" style="width:100px" onblur="setActiveField('none')"> km</div>
+            <div id="divPE" class="paramDisp paramDisp_inactive">
+                PERIAPSIS<div class="display">
+                    <input disabled name="pe" type="text" value="000000" style="width:100px" onblur="setActiveField('none')"> km
+                </div>
             </div>
 
             <div class="paramDisp_hidden">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>

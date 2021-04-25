@@ -4,124 +4,44 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" >
 
-    <style>
-
-        body {
-            width: 360;
-            margin: auto;
-            background-color: 22324d;
-            /*                border: 3px solid white;*/
-        }
-
-        #viewer {
-            width: 360;
-            height: 360;
-            border-width: 1px;
-            //border-color: red;
-            //border-style: solid;
-            background-color: #131339;
-        }
-
-        #dataTables {
-            width: 360px;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-evenly;
-        }
-
-        .dataDiv {
-            width: 120px;
-            box-shadow: 5px 5px 10px -5px grey, -1px -1px 6px -3px lightblue;
-        }
-
-            .dataDiv p {
-                text-align: center;
-            }
-
-        .dataTable {
-            width: 100px;
-            padding-left: 12px;
-        }
-
-            .dataTable td:first-child {
-                font-size: 10pt;
-                color: blue;
-                width: 60px;
-            }
-
-        div#controls {
-            font-size: .75cm;
-            user-select: none;
-            height: 1.5cm;
-            padding-top: .25cm;
-        }
-
-            div#controls i {
-                user-select: none;
-                width: .75cm;
-            }
-
-        svg * {
-            vector-effect: non-scaling-stroke;
-        }
-
-
-        .fn {
-            font-family: "VT323", "Lucida Console", "monospace";
-            font-size: 10pt;
-            color: aquamarine;
-            text-align: center;
-            width: 60px;
-        }
-
-        .mfdFrame {
-            background-color: #131339;
-        }
-    </style>
+    <link rel="stylesheet" href="multiFunctionDisplay.css" />
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
     <script src="orbitalMechanics.js"></script>
     <script src="planetPositions.js"></script>
 
 </head>
+<body>
 
-<svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <style>
-        .fn {
-            font-family: "VT323", "Lucida Console", "monospace";
-            font-size: 10pt;
-            fill: greenyellow;
-            width: 60px;
-        }
-    </style>
+    <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-    <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
+        <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
 
-    <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
-    <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
-    <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
-    <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
-    <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
+        <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
+        <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
+        <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
+        <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
+        <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
 
-    <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-    <text class="fn" text-anchor="middle" x="-90" y="45"></text>
-    <text class="fn" text-anchor="middle" x="-30" y="45"></text>
-    <text class="fn" text-anchor="middle" x="30" y="45"></text>
-    <text class="fn" text-anchor="middle" x="90" y="45"></text>
-    <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
+        <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
+        <text class="fn" text-anchor="middle" x="-90" y="45"></text>
+        <text class="fn" text-anchor="middle" x="-30" y="45"></text>
+        <text class="fn" text-anchor="middle" x="30" y="45"></text>
+        <text class="fn" text-anchor="middle" x="90" y="45"></text>
+        <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
 
-    <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-    <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-    <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-    <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-    <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-    <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calcEject()"" />
-</svg>
-
-<div id="viewer" class="svgContainer">
-    <svg id="transferOrbit" height="360" width="360" viewBox="-136 -136  272 272" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calcEject()"/>
+    </svg>
+    
+    <svg id="mfdScreen" class="mfdFrame" height="360" width="360" viewBox="-136 -136  272 272" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
         <!-- SUN -->
         <circle cx="0" cy="0" r="10" stroke="orange" fill="yellow" />
@@ -130,131 +50,104 @@
         <path id="orbit_destination" stroke="gray" fill="none" stroke-dashArray="3 2 2" />
 
         <!-- MEAN ORBITs -->
-
-
-
         <circle class="mean" id="orbit_meanConcentric_o" cx="0" cy="0" r="207.26" fill="none" stroke-width="1" stroke-dashArray="5,3" />
 
         <!-- PLANETS -->
         <circle id="planet_origin" cx="155.37" cy="152.68" r="10" fill="green" stroke="black" />
-
         <circle id="planet_destination" cx="155.37" cy="152.68" r="10" fill="crimson" stroke="black" />
-
         <circle id="planet_destination_future" cx="155.37" cy="152.68" r="10" fill="crimson" fill-opacity="30%" stroke="black" />
-
 
         <path id="txOrbit" stroke="gray" fill="none" stroke-dashArray="6 4 6" />
 
         <!-- DECORATIONS -->
 
         <line id="line1" x1="0" y1="0" x2="120" y2="120" stroke="lightblue"
-              stroke-dashArray="15 5 5 5 1 5 5 5 10 5" />
+                stroke-dashArray="15 5 5 5 1 5 5 5 10 5" />
 
         <circle id="txMarker" cx="0" cy="0" r="5" stroke="black" fill="white" />
 
         <path id="destTOF" stroke="yellow" stroke-width=3 fill="none" stroke-opacity="30%" />
         <path id="txTOF" stroke="lightgreen" stroke-width=3 fill="none" stroke-opacity="30%" />
-        <!--
-        <circle id="scaleCircle1" cx="0" cy="0" r="100" stroke="blue" fill="none"/>
-        <circle id="scaleCircle2" cx="10" cy="10" r="100" stroke="red" fill="none"/>
-        -->
+       
     </svg>
-</div>
 
-<svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <style>
-        .fn {
-            font-family: "VT323", "Lucida Console", "monospace";
-            font-size: 10pt;
-            fill: greenyellow;
-            width: 60px;
-        }
-    </style>
+    <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        
+        <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
 
-    <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+        <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
+        <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
+        <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
+        <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
+        <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
 
-    <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
-    <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
-    <line x1="0" y1="0" x2="0" y2="20" stroke="blue" />
-    <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
-    <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
+        <text class="fn" text-anchor="middle" x="-150" y="15">F.BCK</text>
+        <text class="fn" text-anchor="middle" x="-90" y="15">BCK</text>
+        <text class="fn" text-anchor="middle" x="-30" y="15">STEP-</text>
+        <!--<text class="fn" text-anchor="middle" x="0" y="15">0</text>-->
+        <text class="fn" text-anchor="middle" x="30" y="15">STEP+</text>
+        <text class="fn" text-anchor="middle" x="90" y="15">FWD</text>
+        <text class="fn" text-anchor="middle" x="150" y="15">F.FWD</text>
 
-    <text class="fn" text-anchor="middle" x="-150" y="15">F.RWD</text>
-    <text class="fn" text-anchor="middle" x="-90" y="15">RWD</text>
-    <text class="fn" text-anchor="middle" x="-30" y="15">STEP-</text>
-    <!--<text class="fn" text-anchor="middle" x="0" y="15">0</text>-->
-    <text class="fn" text-anchor="middle" x="30" y="15">STEP+</text>
-    <text class="fn" text-anchor="middle" x="90" y="15">FWD</text>
-    <text class="fn" text-anchor="middle" x="150" y="15">F.FWD</text>
+        <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, -1)" />
+        <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, -.5)" />
+        <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(-1)" />
+        <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(1)" />
+        <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, .5)" />
+        <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, 1)" />
+    </svg>
 
-    <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, -1)" />
-    <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, -.5)" />
-    <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(-1)" />
-    <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(1)" />
-    <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, .5)" />
-    <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, 1)" />
-</svg>
+    <div id="displayContainer">
 
+        <div class="paramDisp">
+            UT
+            <div class="display">
+                y:<input name="UT_y" type="text" value="00" style="width:25px">
+                d:<input name="UT_d" type="text" value="000" style="width:25px">
+                <input name="UT_h" type="text" value="0" style="width:10px">:<input name="UT_m" type="text" value="00" style="width:18px">
+            </div>
+        </div>
 
+        <div class="paramDisp">
+            <span style="width:60px;">Ln Rdv</span>
+            <span style="width:70px;">Ln Dest</span>
+            <div class="display">
+                <span id="lnRdv" style="width:40px;">180.0</span>
+                <span id="lnDt1" style="width:40px;">180.0</span>
+                <span id="lnDif" style="width:40px;">180.0</span>
+            </div>
+        </div>
 
+        <div id="divAP" class="paramDisp_hidden">
+            ALT/APOAPSIS<br>
+            <div class="display">
+                <input name="ap" type="text" value="100" style="width:100px" style="pointer-events: none;">
+                <span id="apOut"></span>
+                km
+            </div>
+        </div>
 
-<div id="dataTables">
+        <div id="divPE" class="paramDisp paramDisp_hidden">
+            PERIAPSIS<div class="display">
+                <input disabled name="pe" type="text" value="000000" style="width:100px" onblur="setActiveField('none')"> km
+            </div>
+        </div>
 
-    <div id="originPlanetData" class="dataDiv">
-        <p>Origin</p>
-        <table class="dataTable">
-            <tr><td>SMA</td><td>13.6</td></tr>
-            <tr><td>ecc</td><td>0</td></tr>
-            <tr><td>r</td><td>13.6</td></tr>
-            <tr><td>Ln</td><td>0</td></tr>
-        </table>
+        <div class="paramDisp_hidden">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>
+        <div class="paramDisp_hidden">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
+        <div class="paramDisp_hidden">LAN<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
+        <div class="paramDisp_hidden">ARG PE<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
+        <div class="paramDisp_hidden">
+            T TO PE<div class="display">
+                y:<input name="tPe" type="text" value="00" style="width:25">
+                d:<input name="tPe" type="text" value="000" style="width:25">
+                <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
+            </div>
+        </div>
+        <div class="paramDisp_hidden">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
+        <div class="paramDisp_hidden">DELTA V<div class="display"><span id="deltaV">0000.0</span> m/s</div></div>
+
     </div>
 
-    <div id="destinationPlanetData" class="dataDiv">
-        <p>Destination</p>
-        <table class="dataTable">
-            <tr><td>SMA</td><td>13.6</td></tr>
-            <tr><td>ecc</td><td>0</td></tr>
-            <tr><td>r</td><td>13.6</td></tr>
-            <tr><td>Ln</td><td>0</td></tr>
-        </table>
-    </div>
-
-    <div id="txOrbitData" class="dataDiv">
-        <p>Transfer Orbit</p>
-        <table class="dataTable">
-            <tr><td>SMA</td><td>0</td></tr>
-            <tr><td>Ln<sub>rdv</sub></td><td>0</td></tr>
-            <tr><td>TOF</td><td>0</td></tr>
-            <tr><td>Ln<sub>planet</sub></td><td>0</td></tr>
-            <tr><td>Delta Ln</td><td>0</td></tr>
-        </table>
-    </div>
-</div>
-
-<input name="year" type="number" value="1" max=900 min=1 onchange="onDateChange()" />
-<input name="day" type="number" value="1" max=426 min=1 onchange="onDateChange()" />
-
-<!--<div id="controls">
-    <i class="fa fa-angle-double-left" onclick="toggleAnim(25, -1)"></i>
-    <i class="fa fa-angle-left" onclick="toggleAnim(100, -.5)"></i>
-    <i class="fa fa-minus-circle" onclick="onStepButton(-1)"></i>
-
-
-    <i class="fa fa-plus-circle" onclick="onStepButton(1)"></i>
-    <i class="fa fa-angle-right" onclick="toggleAnim(100,.5)"></i>
-    <i class="fa fa-angle-double-right" onclick="toggleAnim(25, 1)"></i>
-</div>
-<div id="settings">
-    <form>
-        Show mean
-        <input name="showMean" type="checkbox" onchange="toggleMean()" />
-        <button name="calc" type="button" onclick="calcEject()">Calc Eject</button>
-        <p class="fn">END</p>
-    </form>
-</div>-->
-
-<div id="ejectionOutput">
-</div>
-
+</body>
 </html>

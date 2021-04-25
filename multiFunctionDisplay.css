@@ -1,0 +1,135 @@
+﻿body {
+    width: 360px;
+    margin: auto;
+    background-color: #22324d;
+    touch-action: manipulation; /*prevents zoom on double tap*/
+}
+
+.mfdFrame {
+    background-color: #131339;
+}
+
+#mfdScreen {
+    position: relative;
+    width: 360px;
+    height: 360px;
+    background-color: #131339;
+    
+}
+
+#onScreenText {
+    position: absolute;
+    margin-top: 0px;
+    margin-left: 20px;
+    color: greenyellow;
+    font-family: "VT323";
+    font-size: 12pt;
+}
+
+.fn {
+    font-family: "VT323", "Lucida Console", "monospace";
+    font-size: 12pt;
+    border-radius: 2px;
+    color: greenyellow;
+    fill: greenyellow;
+    background-color: darkslategrey;
+    width: 60px; /*from/for svgSolarSystem*/
+}
+
+/*from/for svgSolarSystem*/
+.activeFn {
+    fill: black;
+    font-family: "VT323", "Lucida Console", "monospace";
+    font-size: 12pt;
+    color: black;
+    background-color: greenyellow;
+}
+
+rect.fn {
+    fill: #131339;
+}
+
+rect.activeFn {
+    fill: greenyellow;
+}
+
+
+/*from/for svgSolarSystem*/
+.orbit {
+    fill: none;
+    opacity: .1;
+}
+
+/*-----------------------------------------------*/
+/*            --- DISPLAY PANEL --- */
+/*-----------------------------------------------*/
+#displayContainer {
+    display: grid;
+    width: 350px;
+    grid-template-columns: 150px 150px;
+    /*grid-template-rows: 50px 50px 50px 50px 50px;*/
+    grid-row-gap: 5px;
+    grid-column-gap: 10px;
+    justify-content: center;
+    background-color: #484f5b;
+    border: 1px solid black;
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.paramDisp {
+    color: white;
+    overflow: hidden;
+    padding: 5px;
+    border: 1px solid black;
+    background-color: #858c98;
+    border-radius: 3px;
+}
+
+.display, input {
+    background-color: darkslategrey;
+    text-align: right;
+    color: greenyellow;
+    font-family: "VT323";
+    font-size: 12pt;
+    border-radius: 2px;
+}
+
+.paramDisp_hidden {
+    display: none;
+}
+
+.paramDisp_inactive {
+    color: #777;
+}
+
+div.paramDisp_inactive .display, div.paramDisp_inactive input {
+    background-color: darkslategrey;
+    text-align: right;
+    color: black;
+    font-family: "VT323";
+    font-size: 12pt;
+    border-radius: 2px;
+}
+
+input {
+    width: auto;
+    border: none;
+}
+
+#displayContainer span {
+    /*display: inline-block;*/ /*inline block needed for tx Ln disp*/
+    width: 130px;
+    height: 20px;
+}
+
+button {
+    height: 1.2cm;
+    width: 1.2cm;
+    margin: 1px;
+}
+
+svg * {
+    background-color: #131339;
+    vector-effect: non-scaling-stroke;
+}

@@ -199,7 +199,7 @@ function setViewBox(planet1, planet2){
     
     var box = left + " " + top + " " + width + " " + height
     
-    $("#transferOrbit").attr("viewBox", box);
+    $("#mfdScreen").attr("viewBox", box);
     
    /* var rMax_o = planet2.sma + 2*planet2.c;
     var rMax_d = planet1.sma + 2*planet1.c;
@@ -219,7 +219,9 @@ function initialize(){
     params = new URLSearchParams(location.search);
     var origin = params.get("originPlanet");
     var destination = params.get("destinationPlanet");
-    
+    var y = params.get("y");
+    var d = params.get("d");
+
     originPlanet = planets[origin];
     destinationPlanet = planets[destination];
     
@@ -245,10 +247,11 @@ function initialize(){
     svgDestTOF = new svgPartialArc("#destTOF", svgDestinationOrbit, svgDestinationPlanet.jqPlanet, svgDestinationPlanet_future.jqPlanet);    
     svgTxTOF = new svgPartialArc("#txTOF", svgTxOrbit, svgOriginPlanet.jqPlanet, $("#txMarker") );
 
-    $("#originPlanetData p").text(origin);
-    $("#destinationPlanetData p").text(destination);
-    
-    /*onStepButton(1);*/
+    //$("#originPlanetData p").text(origin);
+    //$("#destinationPlanetData p").text(destination);
+
+    $("input[name='UT_y']").val(y);
+    $("input[name='UT_d']").val(d); 
     onDateChange();
 }
 
@@ -276,9 +279,9 @@ function toggleAnim(delay,delta){
 
 function stepT(delta){
     
-    d = Number($("input[name='day']").val());
+    d = Number($("input[name='UT_d']").val());
     d += Number(delta);
-    $("input[name='day']").val(d);
+    $("input[name='UT_d']").val(d);
     
     onDateChange();
 }
@@ -295,21 +298,21 @@ function onDateChange(){
     svgDestTOF.update();
     svgTxTOF.update();
     
-    updateTables(t);
+    updateDisplay(t);
     
     y = Math.trunc(t/secondsPerYear);
     var secondsRemaining = t % secondsPerYear;
     
     d = Math.round(secondsRemaining/secondsPerDay*1000)/1000;
     
-    $("input[name='year']").val(y+1);
-    $("input[name='day']").val(d+1); 
+    $("input[name='UT_y']").val(y+1);
+    $("input[name='UT_d']").val(d+1); 
 }
 
 function getCurrentTime(){
       
-    var y = $("input[name='year']").val()-1;
-    var d = $("input[name='day']").val()-1;   
+    var y = $("input[name='UT_y']").val()-1;
+    var d = $("input[name='UT_d']").val()-1;   
     
     return convertDateToSeconds(y, d, 0, 0);
   
@@ -343,108 +346,18 @@ function convertSecondsToDate(seconds){
     return year + "y " + day + "d ";  //+ hour + ":" + minute;
 }
 
+function updateDisplay(t) {
 
-function updateTables(t){
-    
-    var planet = originPlanet;
-    var name = planet.name;
-    var sma = (planet.sma/1e9).toFixed(2);
-    var ecc = planet.ecc.toFixed(3);
-    var r_mean = sma;
-    var Ln_mean = (planet.MeanLnAtTimeT(t) * 180/pi).toFixed(1);
-    
-    var Ln = planet.LnAtTimeT(t);
-    var r = (planet.rAtLn(Ln)/1e9).toFixed(2);
-    
-    var Ln_deg = (Ln*180/pi).toFixed(1);
-    
-    var d_r = (r_mean - r).toFixed(2);
-    var d_Ln = (Ln_mean - Ln_deg).toFixed(1);
-    
-    
-    $("#originPlanetData p").eq(1).text(name);
-    
-    var rows = $("#originPlanetData tr");
-    
-    rows.eq(0).children("td").eq(1).text(sma);
-    rows.eq(1).children("td").eq(1).text(ecc);
-    rows.eq(2).children("td").eq(1).text(r);
-    rows.eq(3).children("td").eq(1).text(Ln_deg);
-    
-    planet = destinationPlanet;
-    
-    name = planet.name;
-    sma = (planet.sma/1e9).toFixed(2);
-    ecc = planet.ecc;
-    r_mean = sma;
-    Ln_mean = (planet.MeanLnAtTimeT(t) * 180/pi).toFixed(1);
-    
-    Ln = planet.LnAtTimeT(t);
-    r = (planet.rAtLn(Ln)/1e9).toFixed(2);
-    
-    Ln_deg = (Ln*180/pi).toFixed(1);
-    d_r = (r_mean - r).toFixed(2);
-    d_Ln = (Ln_mean - Ln_deg).toFixed(1);
-    
-    
-    $("#destinationPlanetData p").eq(1).text(name);
-    
-    var rows = $("#destinationPlanetData tr");
-    
-    rows.eq(0).children("td").eq(1).text(sma);
-    rows.eq(1).children("td").eq(1).text(ecc);
-    rows.eq(2).children("td").eq(1).text(r);
-    rows.eq(3).children("td").eq(1).text(Ln_deg);
-    
-    var rows =$("#txOrbitData tr");
-    
-    var pe_mean = (txOrbit.pe_mean/1e9).toFixed(2);
-    var ap_mean = (txOrbit.ap_mean/1e9).toFixed(2);
-    var Ln_mean = (txOrbit.Ln_rdv_mean * 180/pi).toFixed(1);
-    var TOF_mean = (txOrbit.TOF_mean/secondsPerDay).toFixed(1);
-    
-    var sma = (txOrbit.a/1e9).toFixed(2);
-    var Ln = (modRev(txOrbit.Ln_d, 4)*180/pi).toFixed(1);
-    var tof = txOrbit.TOF
-    var Ln_dest_rdv = (planet.LnAtTimeT(t+tof)*180/pi).toFixed(1);
-    
-    tof = (tof/secondsPerDay).toFixed(1);
-    var phaseAngle = destinationPlanet.LnAtTimeT(t)-originPlanet.LnAtTimeT(t);
-    phaseAngle = (phaseAngle * 180/pi).toFixed(1);
-    var deltaLn = (Ln-Ln_dest_rdv).toFixed(2);
-    
-    rows.eq(0).children("td").eq(1).text(sma);
-    rows.eq(1).children("td").eq(1).text(Ln);
-    rows.eq(2).children("td").eq(1).text(tof);
-    rows.eq(3).children("td").eq(1).text(Ln_dest_rdv);
-    rows.eq(4).children("td").eq(1).text(deltaLn);
+    let t1 = t + txOrbit.TOF
+    let ln_rdv = (modRev(originPlanet.LnAtTimeT(t) + pi,2) * 180/pi).toFixed(1);
+    let ln_dt1 = (modRev(destinationPlanet.LnAtTimeT(t1),2) * 180/pi).toFixed(1);
+    let ln_dif = (ln_rdv - ln_dt1).toFixed(1);
+
+    $("#lnRdv").text(ln_rdv);
+    $("#lnDt1").text(ln_dt1);
+    $("#lnDif").text(ln_dif);
 }
 
-function calcEject(){
-    
-    var origin = originPlanet.name;
-    var destination = destinationPlanet.name;
-    var t = getCurrentTime();
-    var vSOI = 1384;
-
-    var qryStr = `?origin=${origin}&destination=${destination}&vSOI=${vSOI}&t=${t}`;
-    location = "ejectionAngle.html" + qryStr;
-    
-    /*var park={r:700000, v:2810}
-    var eject = EjectionOrbit(txOrbit,park)
-    var dv = eject.deltaV;
-    var theta=eject.ejectionAngle;
-    
-    var ejectAngleStr = "<p>ejection angle: 1</p>".replace("1", theta);
-    var dvStr = "<p>delta V: 1</p>".replace("1", dv);
-    
-    $("#ejectionOutput").html(ejectAngleStr).after(dvStr);
-    */
-}
-
-function toggleMean(){
-    $(".mean").toggle();   
-}
 
 $(document).ready(function(){
     console.log("document ready");
