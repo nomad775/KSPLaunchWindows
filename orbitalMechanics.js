@@ -37,10 +37,12 @@ class Planet{
     cx = 0;
     cy = 0;
 
-    constructor(name, sma, ecc, LnPe, mean0, mu, soi, r){
+    constructor(name, sma, ecc, inc, LnPe, mean0, mu, soi, r){
         this.name = name;
         this.sma = sma;
         this.ecc = ecc;
+        this.inc = inc;
+
         this.LnPe = LnPe;
         this.mean0 = mean0;
         this.mu = mu;
@@ -148,43 +150,47 @@ class TransferOrbit{
        
         this.TOF = pi * Math.sqrt(this.a**3/mu_sun);
 
-        this.v_depart = Math.sqrt(mu_sun*(2/this.ro-2/(this.ro+this.rd) ) );
+        this.v_depart = Math.sqrt(mu_sun * (2 / this.ro - 2 / (this.ro + this.rd)));
         this.v_origin = Math.sqrt(mu_sun/this.ro);
 
+        this.v_arrive = math.sqrt(mu_sun * (2 / this.rd - 2 / (this.ro + this.rd)));
+        this.v_destination = Math.sqrt(mu_sun / this.rd);
     }
 }
 
-function EjectionOrbit(txOrbit, r_park, v_park){
-    
-    // v0 - velocity of parking orbit
+function HyperbolicOrbit(body, pe, v_soi){
+
+
+    // v0 - velocity of pe (e.g. parking orbit)
     // v1 - velocity at Pe, after dV applied, required to obtain v2 at SOI
     // v2 - velocity at SOI, relative to planet
     // v3 - velocity just past SOI, relative to sun, required for tx orbit
     
-    let v3 = txOrbit.v_depart;
-    let v2 = v3 - txOrbit.v_origin;
-    
+    //let v3 = txOrbit.v_depart;
+    //let v2 = v3 - txOrbit.v_origin;
+    let v2 = v_soi;
+
     // calculate sma of hyperbolic orbit
     // using v_r = sqrt(mu * (2/r - 1/a)) for r=SOI
     // v_r is the known required velocity for the transfer orbit
     // the required value for a can be calucated
     // v_r^2/mu = 2/r - 1/a => 2/r - v^2/mu = 1/a
-    let soi = txOrbit.originPlanet.soi;
-    let mu = txOrbit.originPlanet.mu;
+    let soi = body.soi;
+    let mu = body.mu;
     let a_hyp = Math.abs(1/(2/soi - v2**2/mu));
     
     // calculate v1 from vis-viva eqn
-    let v1 = Math.sqrt(mu*(2/r_park + 1/a_hyp));
-    let v0 = v_park;
+    let v1 = Math.sqrt(mu*(2/pe + 1/a_hyp));
+    let v0 = body.v(pe);
     let deltaV = v1-v0;
 
-    let theta = Math.acos(a_hyp / (a_hyp + r_park));
-    let ejectionAngle = (pi - theta) * 180/pi;
+    let theta = Math.acos(a_hyp / (a_hyp + pe));
+    let halfAngle = (pi - theta) * 180/pi;
 
     console.log(deltaV);
-    console.log(ejectionAngle);
+    console.log(halfAngle);
 
-    return {deltaV: deltaV, ejectionAngle: ejectionAngle};
+    return {deltaV: deltaV, halfAngle: halfAngle};
 }
 
 /*class TransferWindow {
@@ -297,14 +303,15 @@ function createPlanetObject(){
     let argPe = Number($(this).find("orbit argPe").text() );
     let LAN = Number($(this).find("orbit lan").text());
     let theta0 = Number($(this).find("orbit mean0").text());
-    
+    let inc = Number($(this).find("orbit inc").text());
+
     let soi = Number($(this).find("soi").text());
     let mu = Number($(this).find("mu").text());
     let r = Number($(this).find("radius").text());
 
     var LnPe = (argPe + LAN) * pi/180;
     LnPe %= (2*pi);
-    planet = new Planet(name, sma, ecc, LnPe, theta0, mu, soi, r);
+    planet = new Planet(name, sma, ecc, inc, LnPe, theta0, mu, soi, r);
     
     planets[name] = planet;
  
