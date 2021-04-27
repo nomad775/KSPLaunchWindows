@@ -12,7 +12,20 @@
 
     <script src="orbitalMechanics.js"></script>
     <script src="planetPositions.js"></script>
+    <script>
 
+        function next(){
+
+            var origin = originPlanet.name;
+            var destination = destinationPlanet.name;
+            var t = getCurrentTime();
+            var vSOI = 1384;
+
+            var qryStr = `?origin=${origin}&destination=${destination}&t=${t}`;
+            location = "ejectionAngle.html" + qryStr;
+        }
+
+    </script>
 </head>
 <body>
 
@@ -38,7 +51,7 @@
         <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="calcEject()"/>
+        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="next()"/>
     </svg>
     
     <svg id="mfdScreen" class="mfdFrame" height="360" width="360" viewBox="-136 -136  272 272" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -99,36 +112,64 @@
 
     <div id="displayContainer">
 
+        <!-- UT -->
         <div class="paramDisp">
             UT
-            <div class="display">
+            <div class="LCDscreen">
                 y:<input name="UT_y" type="text" value="00" style="width:25px">
                 d:<input name="UT_d" type="text" value="000" style="width:25px">
                 <input name="UT_h" type="text" value="0" style="width:10px">:<input name="UT_m" type="text" value="00" style="width:18px">
             </div>
         </div>
 
+        <!-- Ln's -->
         <div class="paramDisp">
-            <span style="width:60px;">Ln Rdv</span>
-            <span style="width:70px;">Ln Dest</span>
-            <div class="display">
+            <!--label-->
+            LN:
+            <span style="padding-left:5px;">RDV</span>
+            <span style="padding-left:10px;">DEST</span>
+            <span style="padding-left:10px;">DIFF</span>
+
+            <div class="LCDscreen">
                 <span id="lnRdv" style="width:40px;">180.0</span>
                 <span id="lnDt1" style="width:40px;">180.0</span>
                 <span id="lnDif" style="width:40px;">180.0</span>
             </div>
         </div>
 
+        <!--TOF-->
+        <div class="paramDisp">
+            TOF
+            <div class="LCDscreen">
+                y:<span id="tofY" style="width:25px;">000</span>
+                d:<span id="tofD" style="width:25px;">000</span>
+                  <span id="tofH" style="width:10px;">0</span>:<span id="tofM" style="width:18px;">00</span>
+            </div>
+        </div>
+
+        <!--DELTA V-->
+        <div class="paramDisp">DELTA V
+            <div class="LCDscreen">
+                <span id="deltaV">0000.0</span> m/s
+            </div>
+        </div>
+
+
+
+        <div class="paramDisp_hidden">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
+        
         <div id="divAP" class="paramDisp_hidden">
             ALT/APOAPSIS<br>
-            <div class="display">
-                <input name="ap" type="text" value="100" style="width:100px" style="pointer-events: none;">
+            <div class="LCDscreen">
+                <input name="ap" type="text" value="100" style="width:100px; pointer-events: none;">
                 <span id="apOut"></span>
                 km
             </div>
         </div>
 
         <div id="divPE" class="paramDisp paramDisp_hidden">
-            PERIAPSIS<div class="display">
+            PERIAPSIS
+            <div class="LCDscreen">
                 <input disabled name="pe" type="text" value="000000" style="width:100px" onblur="setActiveField('none')"> km
             </div>
         </div>
@@ -137,15 +178,7 @@
         <div class="paramDisp_hidden">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
         <div class="paramDisp_hidden">LAN<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
         <div class="paramDisp_hidden">ARG PE<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
-        <div class="paramDisp_hidden">
-            T TO PE<div class="display">
-                y:<input name="tPe" type="text" value="00" style="width:25">
-                d:<input name="tPe" type="text" value="000" style="width:25">
-                <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
-            </div>
-        </div>
-        <div class="paramDisp_hidden">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
-        <div class="paramDisp_hidden">DELTA V<div class="display"><span id="deltaV">0000.0</span> m/s</div></div>
+
 
     </div>
 
