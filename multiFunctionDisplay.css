@@ -5,25 +5,11 @@
     touch-action: manipulation; /*prevents zoom on double tap*/
 }
 
+/*-----------------------------------------------*/
+/*                 --- SVG ---                   */
+/*-----------------------------------------------*/
 .mfdFrame {
     background-color: #131339;
-}
-
-#mfdScreen {
-    position: relative;
-    width: 360px;
-    height: 360px;
-    background-color: #131339;
-    
-}
-
-#onScreenText {
-    position: absolute;
-    margin-top: 0px;
-    margin-left: 20px;
-    color: greenyellow;
-    font-family: "VT323";
-    font-size: 12pt;
 }
 
 .fn {
@@ -54,11 +40,26 @@ rect.activeFn {
 }
 
 
-/*from/for svgSolarSystem*/
-.orbit {
-    fill: none;
-    opacity: .1;
+#mfdScreen {
+    position: relative;
+    width: 360px;
+    height: 360px;
+    background-color: #131339;
 }
+
+#onScreenText {
+    position: absolute;
+    width: 320px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 0px;
+    color: greenyellow;
+    font-family: "VT323";
+    font-size: 12pt;
+    overflow: hidden;
+}
+
+
 
 /*-----------------------------------------------*/
 /*            --- DISPLAY PANEL --- */
@@ -84,15 +85,7 @@ rect.activeFn {
     border: 1px solid black;
     background-color: #858c98;
     border-radius: 3px;
-}
-
-.display, input {
-    background-color: darkslategrey;
-    text-align: right;
-    color: greenyellow;
-    font-family: "VT323";
-    font-size: 12pt;
-    border-radius: 2px;
+    font-size: 12px;
 }
 
 .paramDisp_hidden {
@@ -103,7 +96,20 @@ rect.activeFn {
     color: #777;
 }
 
-div.paramDisp_inactive .display, div.paramDisp_inactive input {
+/* LCD screen */
+.LCDscreen, input {
+    background-color: darkslategrey;
+    color: greenyellow;
+    font-family: "VT323";
+    font-size: 12pt;
+    border-radius: 2px;
+    text-align: right;
+    height: 18px;
+    
+}
+
+/* inactive LCD screen */
+div.paramDisp_inactive .LCDscreen, div.paramDisp_inactive input {
     background-color: darkslategrey;
     text-align: right;
     color: black;
@@ -112,24 +118,39 @@ div.paramDisp_inactive .display, div.paramDisp_inactive input {
     border-radius: 2px;
 }
 
+
 input {
     width: auto;
     border: none;
 }
 
-#displayContainer span {
-    /*display: inline-block;*/ /*inline block needed for tx Ln disp*/
-    width: 130px;
+.LCDscreen span {
+    display: inline-block; /*inline block needed for tx Ln disp*/
     height: 20px;
+    vertical-align: middle;
+    padding-top: 1.5px;
 }
 
+
+/*-----------------------------------------------*/
+/*            --- KEYBOARD PANEL ---             */
+/*-----------------------------------------------*/
 button {
     height: 1.2cm;
     width: 1.2cm;
     margin: 1px;
 }
 
+/*-----------------------------------------------*/
+/*                 --- SVG ---                   */
+/*-----------------------------------------------*/
 svg * {
     background-color: #131339;
     vector-effect: non-scaling-stroke;
+}
+
+/*from/for svgSolarSystem*/
+.orbit {
+    fill: none;
+    opacity: .1;
 }

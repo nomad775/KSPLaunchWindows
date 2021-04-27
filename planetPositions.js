@@ -7,6 +7,7 @@ var r = 20;
 
 var originPlanet;
 var destinationPlanet;
+
 var txOrbit;
 
 var timer;
@@ -331,19 +332,19 @@ function convertDateToSeconds(year, day, hour, minute){
 
 function convertSecondsToDate(seconds){
 
-    var year = Math.trunc(seconds/secondsPerYear);
-    var secondsRemaining = seconds % secondsPerYear;
+    let year = Math.trunc(seconds/secondsPerYear);
+    let secondsRemaining = seconds % secondsPerYear;
     
-    var day = Math.trunc(secondsRemaining/secondsPerDay);
+    let day = Math.trunc(secondsRemaining/secondsPerDay);
     secondsRemaining = secondsRemaining % secondsPerDay;
     
-    var hour = Math.trunc(secondsRemaining / secondsPerHour);
+    let hour = Math.trunc(secondsRemaining / secondsPerHour);
     secondsRemaining = secondsRemaining % secondsPerHour;
     
-    var minute = Math.trunc(secondsRemaining / secondsPerMinute);
-    var second = secondsRemaining;
+    let minute = Math.trunc(secondsRemaining / secondsPerMinute);
+    let second = secondsRemaining;
     
-    return year + "y " + day + "d ";  //+ hour + ":" + minute;
+    return { y: year, d: day, h: hour, m: minute, s: second };
 }
 
 function updateDisplay(t) {
@@ -356,6 +357,19 @@ function updateDisplay(t) {
     $("#lnRdv").text(ln_rdv);
     $("#lnDt1").text(ln_dt1);
     $("#lnDif").text(ln_dif);
+
+    let tof = convertSecondsToDate(txOrbit.TOF);
+    $("#tofY").text(tof.y);
+    $("#tofD").text(tof.d);
+    $("#tofH").text(tof.h);
+    $("#tofM").text(tof.M);
+
+    let dvEject = HyperbolicOrbit(originPlanet, 100000, txOrbit.v_soi_o).deltaV;
+    let dvPlaneChange = txOrbit.planeChangeDv();
+    let dvCapture = HyperbolicOrbit(destinationPlanet, 100000, txOrbit.v_soi_d).deltaV;
+
+    $("#deltaV").text((dvEject + dvPlaneChange + dvCapture).toFixed(0));
+
 }
 
 

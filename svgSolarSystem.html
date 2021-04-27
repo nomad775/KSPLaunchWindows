@@ -97,8 +97,8 @@
 
                 if (!isNaN(dx) && !isNaN(dy)) {
 
-                    viewBox.x -= dx;
-                    viewBox.y -= dy;
+                    viewBox.x -= dx*2;
+                    viewBox.y -= dy*2;
 
                 }
 
@@ -115,18 +115,13 @@
                 let deltaD = lastD - d;
 
                 if (d > lastD) {
-                    zoom(-25);
+                    zoom(-150);
                 } else {
-                    zoom(25)
+                    zoom(150)
                 }
 
                 lastD = d;
-                //$("#fnStr").text(deltaD);
-
-
             }
-
-            //console.log(event.offsetX, event.movementX);
         }
 
         function next() {
@@ -460,7 +455,7 @@
     <div id="displayContainer">
 
         <div class="paramDisp">
-            UT<div class="display">
+            UT<div class="LCDscreen">
                 y:<input name="UT_y" type="text" value="001" maxlength="3" style="width:25px">
                 d:<input name="UT_d" type="text" value="001" maxlength="3" style="width:25px">
                 <input name="UT_h" type="text" value="0" maxlength="1" style="width:10px">:
