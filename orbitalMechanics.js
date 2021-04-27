@@ -37,12 +37,12 @@ class Planet{
     cx = 0;
     cy = 0;
 
-    constructor(name, sma, ecc, inc, LnPe, mean0, mu, soi, r){
+    constructor(name, sma, ecc, inc, LAN, LnPe, mean0, mu, soi, r){
         this.name = name;
         this.sma = sma;
         this.ecc = ecc;
         this.inc = inc;
-
+        this.LAN = LAN;
         this.LnPe = LnPe;
         this.mean0 = mean0;
         this.mu = mu;
@@ -101,8 +101,9 @@ class Planet{
     }
 
      
-    v(r){
-        return Math.sqrt(mu_sun * (2 / r - 1 / this.sma))
+    v(r) {
+        return Math.sqrt(mu_sun * (2 / r - 1 / this.sma));
+
         //Math.sqrt(mu_sun * (2 / this.ro - 2 / (this.ro + this.rd)))
         //math.sqrt(mu_sun / r);
 
@@ -141,25 +142,65 @@ class TransferOrbit{
         
         this.ro = this.originPlanet.rAtLn(this.Ln_o);
         this.rd = this.destinationPlanet.rAtLn(this.Ln_d);
-        
-        /*this.ap = (ro > rd) ? ro : rd;
-        this.pe = (ro < rd) ? ro : rd;*/
-        
+
+        this.vo = this.originPlanet.v(this.ro);
+        this.vd = this.destinationPlanet.v(this.rd)
+
         this.a = (this.ro + this.rd)/2;
         this.b = Math.sqrt(this.ro * this.rd);
-       
+        this.e = Math.sqrt(this.a ** 2 - this.b ** 2) / this.a;
+
         this.TOF = pi * Math.sqrt(this.a**3/mu_sun);
 
-        this.v_depart = Math.sqrt(mu_sun * (2 / this.ro - 2 / (this.ro + this.rd)));
-        this.v_origin = Math.sqrt(mu_sun/this.ro);
+        this.v_depart = Math.sqrt(mu_sun * (2 / this.ro - 1 / this.a));
+        this.v_arrive = Math.sqrt(mu_sun * (2 / this.rd - 1 / this.a));
 
-        this.v_arrive = math.sqrt(mu_sun * (2 / this.rd - 2 / (this.ro + this.rd)));
-        this.v_destination = Math.sqrt(mu_sun / this.rd);
+        this.v_soi_o = this.v_depart - this.vo;
+        this.v_soi_d = this.v_arrive - this.vd;
     }
+
+    planeChangeDv() {
+
+        let io = this.originPlanet.inc;
+        let LANo = this.originPlanet.LAN;
+
+        let id = this.destinationPlanet.inc;
+        let LANd = this.destinationPlanet.LAN;
+
+        //vector normal to orbit orbit
+        let ax = Math.sin(LANo) * Math.sin(io);
+        let ay = -Math.cos(LANo) * Math.sin(io);
+        let az = Math.cos(io);
+
+        //vector normal to destination orbit
+        let bx = Math.sin(LANd) * Math.sin(id);
+        let by = -Math.cos(LANd) * Math.sin(id);
+        let bz = Math.cos(id);
+
+        //vector towards AN/DN is cross product
+        let cx = ay * bz - az * by;
+        let cy = az * bx - ax * bz;
+        let cz = ax * by - ay * bx;
+
+        //angle between normal vectors = angle between planes
+        //cross product = mag A * mag B * sin(theta); mag A = mag B = 1
+        let mag = Math.sqrt(cx ** 2 + cy ** 2 + cz ** 2);
+        let inc = Math.asin(mag);
+        let Ln = Math.acos(cx);
+
+        var r = this.a * (1 - this.e ** 2) / (1 + this.e * Math.cos(Ln - this.Ln_o))
+
+        let v = Math.sqrt(mu_sun * (2 / r - 1 / this.a));
+        let dV = 2 * v * Math.sin(inc / 2);
+
+        return dV;
+    }
+   
 }
 
-function HyperbolicOrbit(body, pe, v_soi){
+function HyperbolicOrbit(body, peAlt, v_soi){
 
+    let r_pe = body.r + peAlt;
 
     // v0 - velocity of pe (e.g. parking orbit)
     // v1 - velocity at Pe, after dV applied, required to obtain v2 at SOI
@@ -178,117 +219,18 @@ function HyperbolicOrbit(body, pe, v_soi){
     let soi = body.soi;
     let mu = body.mu;
     let a_hyp = Math.abs(1/(2/soi - v2**2/mu));
-    
+
     // calculate v1 from vis-viva eqn
-    let v1 = Math.sqrt(mu*(2/pe + 1/a_hyp));
-    let v0 = body.v(pe);
-    let deltaV = v1-v0;
+    let v1 = Math.sqrt(mu*(2/r_pe + 1/a_hyp));
+    let v0 = Math.sqrt(mu/r_pe);
+    let deltaV = v1 - v0;
 
-    let theta = Math.acos(a_hyp / (a_hyp + pe));
+    let theta = Math.acos(a_hyp / (a_hyp + r_pe));
     let halfAngle = (pi - theta) * 180/pi;
-
-    console.log(deltaV);
-    console.log(halfAngle);
 
     return {deltaV: deltaV, halfAngle: halfAngle};
 }
 
-/*class TransferWindow {
-
-    constructor(originPlanet, destinationPlanet) {
-
-        this.originPlanet = originPlanet;
-        this.destinationPlanet = destinationPlanet;
-
-        this.origin = originPlanet.name;
-        this.destination = destinationPlanet.name;
-
-        // estimate from mean anomaly
-        var t = this.meanEstimate(currentTime);
-
-        this.Tmean = (t / secondsPerDay).toFixed(1);
-
-        console.log(this.originPlanet.name + " to " + this.destinationPlanet.name + " mean estimate " + t);
-
-        // iterate using true anomaly
-        for (var i = 0; i < 7; i++) {
-            t = this.ellipticalEstimate(currentTime, t);
-        }
-
-        this.T = Math.round(t / secondsPerDay);
-        this.date = convertSecondsToDate(t);
-
-    }
-
-
-    calculatePhaseAngleForTransfer(txSMA) {
-        var txTOF = pi * Math.sqrt(txSMA ** 3 / mu_sun); // /secondsPerDay;
-        var destinationDeltaTheta = txTOF / this.destinationPlanet.period * 2 * pi;
-        return pi - destinationDeltaTheta;
-    }
-
-    calculateDeltaT(epsilon) {
-
-        var relAngV = (2 * pi) / this.destinationPlanet.period - (2 * pi) / this.originPlanet.period;
-        var t = -epsilon / relAngV;
-
-        //var relativePeriod =/(1/this.destinationPlanet.period - 1/this.originPlanet.period);
-
-        var relativePeriod = Math.abs(2 * pi / relAngV);
-
-        var margin = -20; //-.1 * Math.abs(relativePeriod);
-
-
-        if (t < 0) t += relativePeriod;
-
-        return t;
-    }
-
-
-    meanEstimate(t) {
-
-        var LnOrigin = (t / this.originPlanet.period * 2 * pi + this.originPlanet.mean0) % (2 * pi);
-        var LnDest = (t / this.destinationPlanet.period * 2 * pi + this.destinationPlanet.mean0) % (2 * pi);
-
-        //var LnOrigin = this.originPlanet.LnAtTimeT(t);
-        //var LnDest = this.destinationPlanet.LnAtTimeT(t);
-
-        var phi_current = LnDest - LnOrigin;
-
-
-        var txSMA = (this.destinationPlanet.sma + this.originPlanet.sma) / 2;
-        var phi_transfer = this.calculatePhaseAngleForTransfer(txSMA);
-
-        var epsilon = phi_current - phi_transfer;
-
-        var deltaT = this.calculateDeltaT(epsilon);
-
-        return deltaT;
-    }
-
-    ellipticalEstimate(t, tEst) {
-
-        var Ln_origin_current = this.originPlanet.LnAtTimeT(t);
-        var Ln_destination_current = this.destinationPlanet.LnAtTimeT(t);
-
-        var phi_current = Ln_destination_current - Ln_origin_current;
-
-        // calculate position at estimated time of departure
-        var Ln_origin = this.originPlanet.LnAtTimeT(tEst);
-        var Ln_destination = Ln_origin + pi;
-
-        // calculate transfer orbit sma at estimated departure time/position
-        var pe = this.originPlanet.rAtLn(Ln_origin);
-        var ap = this.destinationPlanet.rAtLn(Ln_destination);
-        var sma = (ap + pe) / 2;
-
-        var phi_transfer = this.calculatePhaseAngleForTransfer(sma);
-        var epsilon = phi_current - phi_transfer;
-        var timeUntilTransfer = this.calculateDeltaT(epsilon);
-
-        return Math.round(timeUntilTransfer, 1);
-    }
-}*/
 
 function createPlanetObject(){
     
@@ -301,9 +243,9 @@ function createPlanetObject(){
     let sma = Number($(this).find("orbit sma").text());
     let ecc = Number($(this).find("orbit ecc").text());
     let argPe = Number($(this).find("orbit argPe").text() );
-    let LAN = Number($(this).find("orbit lan").text());
+    let LAN = Number($(this).find("orbit lan").text()) * pi / 180;
     let theta0 = Number($(this).find("orbit mean0").text());
-    let inc = Number($(this).find("orbit inc").text());
+    let inc = Number($(this).find("orbit inc").text()) * pi / 180;
 
     let soi = Number($(this).find("soi").text());
     let mu = Number($(this).find("mu").text());
@@ -311,7 +253,7 @@ function createPlanetObject(){
 
     var LnPe = (argPe + LAN) * pi/180;
     LnPe %= (2*pi);
-    planet = new Planet(name, sma, ecc, inc, LnPe, theta0, mu, soi, r);
+    planet = new Planet(name, sma, ecc, inc, LAN, LnPe, theta0, mu, soi, r);
     
     planets[name] = planet;
  
