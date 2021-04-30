@@ -6,3 +6,9 @@ Web.config
 .vs/VSWorkspaceState.json
 *.config
 *.sln
+/~~ejectionAngle.html
+/HtmlPage.html.exclude
+/multiFunctionDisplay.svg.exclude
+/multiFunctionDisplay_inkscape.svg.exclude
+/multiFunctionDisplay_plain.svg.exclude
+/orbitIllustration.html.exclude

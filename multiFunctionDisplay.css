@@ -41,24 +41,30 @@ rect.activeFn {
 
 
 #mfdScreen {
-    position: relative;
+    /*position: relative;*/
     width: 360px;
-    height: 360px;
+    /*height: 360px;*/
     background-color: #131339;
 }
 
 #onScreenText {
-    position: absolute;
+    /*position: absolute;*/
     width: 320px;
     padding-left: 20px;
     padding-right: 20px;
-    margin-top: 0px;
-    color: greenyellow;
+    /*margin-top: 0px;
+    color: greenyellow;*/
     font-family: "VT323";
     font-size: 12pt;
     overflow: hidden;
 }
 
+td {
+    color: greenyellow;
+    font-family: "VT323";
+    font-size: 12pt;
+    overflow: hidden;
+}
 
 
 /*-----------------------------------------------*/
@@ -147,10 +153,11 @@ button {
 svg * {
     background-color: #131339;
     vector-effect: non-scaling-stroke;
+    border:1px solid red;
 }
 
 /*from/for svgSolarSystem*/
 .orbit {
     fill: none;
-    opacity: .1;
+    opacity: .8;
 }

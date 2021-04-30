@@ -344,7 +344,8 @@ function convertSecondsToDate(seconds){
     let minute = Math.trunc(secondsRemaining / secondsPerMinute);
     let second = secondsRemaining;
     
-    return { y: year, d: day, h: hour, m: minute, s: second };
+    return {
+        y: year, d: day, h: hour, m: minute, s: second, toString() { return `y:${y} d:${d} ${h};${m}` } };
 }
 
 function updateDisplay(t) {

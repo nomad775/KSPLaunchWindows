@@ -1,3 +1,4 @@
+<!docType HTML>
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,45 +9,22 @@
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="orbitalMechanics.js"></script>
-        
+<!--
         <style>
 
             p{
                 margin:0px;
             }
 
-            #title{
-                text-align: center;
-                margin-top: 20px;
-                margin-bottom: 20px;
+            table{
+                margin: auto;
+                width: 200px;
             }
 
-            #subTitle {
-                text-align: center;
-                margin-bottom: 10px;
-            }
-
-            span.dvLabel{
-                display: inline-block;
-                width: 80px;
-                margin-left: 20px;
-                margin-top: 5px;
-                margin-bottom: 0px;
-            }
-
-            span.dv{
-                display: inline-block;
-                width: 60px;
-                text-align: right;
-                padding:0;
-            }
-
-            #totalDv{
-                margin-top: 15px;
-            }
+            
 
         </style>
-
+-->
         <script>
 
             var origin;
@@ -168,7 +146,7 @@
                 
                 fields["dvEjection"].value = eo.deltaV.toFixed(2);
 
-                //updateDisplay("ea", ejectionOrbit.ejectionAngle);
+                updateDisplay("ejectionAngle", eo.halfAngle.toFixed(1));
                 updateDisplay("dvEjection", eo.deltaV.toFixed(2));
 
             }
@@ -186,7 +164,7 @@
 
                 fields["dvCapture"].value = captureOrbit.deltaV.toFixed(2);
 
-                //updateDisplay("dv_captuer", captureOrbit.halfAngle);
+                //updateDisplay("dv_capture", captureOrbit.halfAngle);
                 updateDisplay("dvCapture", captureOrbit.deltaV.toFixed(2));
             }
 
@@ -310,7 +288,8 @@
 
             function updateDisplay(id, value) {
                 let field = fields[id];
-                $(field.receiver).text(value);  //.toFixed(2));
+                //$(field.receiver).text(value);
+                $(field.receiver).each(function () { $(this).text(value) } );
             }
 
             function initializeEjectOrbit() {
@@ -324,18 +303,22 @@
                 fields["origin"] = { id: "origin", label: "ORIGIN", value: "Origin", x: 0, buttonLabel: '', receiver: "#originName" };
                 fields["destination"] = { id: "destination", label: "DESTINATION", value: "Destination", x: 0, buttonLabel: '', receiver: "#destinationName" };
 
-                fields["dvEjection"] =    { id: "dvEjection",    label: "Ejection orbit dV", value: 0, x: 0, buttonLabel: '', receiver: "#ejectDv" };
-                fields["dvPlaneChange"] = { id: "dvPlaneChange", label: "Plane change dV", value: 0, x: 0, buttonLabel: '', receiver: "#planeDv" };
-                fields["dvCapture"] =     { id: "dvCapture",     label: "Capture dV", value: 0, x: 0, buttonLabel: '', receiver: "#captureDv" };
-                fields["dvTotal"] =       { id: "dvTotal",       label: "TOTAL", value: 0, x: 0, buttonLabel: '', receiver: "#totalDv" };
+                fields["ejectionAngle"] = { label: "Ejection Angle", value: 0, receiver: "#ejectAng" };
+
+                $("#table1 tr:eq(1) td:eq(1)").attr("id", "ejectDv1");
+                fields["dvEjection"] =    { id: "dvEjection",    label: "Ejection orbit dV", value: 0, x: 0, buttonLabel: '', receiver: "[id^='ejectDv']" };
+                fields["dvPlaneChange"] = { id: "dvPlaneChange", label: "Plane change dV",   value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(2) td:eq(1)" };
+                fields["dvCapture"] =     { id: "dvCapture",     label: "Capture dV",        value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(3) td:eq(1)" };
+                fields["dvTotal"] =       { id: "dvTotal",       label: "TOTAL",             value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(4) td:eq(1)" };
 
                 let params = new URLSearchParams(location.search);
 
-                originName = params.get("origin");
-                destinationName = params.get("destination");
-                t = params.get("t");
-                vSOI = params.get("vSOI");
+                let originName = params.get("origin");
+                let destinationName = params.get("destination");
+                let t = params.get("t");
 
+                $("#tod").text(convertSecondsToDate(t).toString());
+                               
                 origin = planets[originName];
                 destination = planets[destinationName];
 
@@ -352,10 +335,39 @@
                 calculateCapture();
 
                 let dvTotal = Number(fields["dvEjection"].value) + Number(fields["dvPlaneChange"].value) + Number(fields["dvCapture"].value);
-                console.log(dvTotal);
+                
                 updateDisplay("dvTotal", dvTotal.toFixed(2));
 
             }
+
+            // COPIED FROM planetPositions.js for now
+
+            const secondsPerMinute = 60;
+            const secondsPerHour = 60 * secondsPerMinute;
+            const secondsPerDay = 6 * secondsPerHour;
+            const secondsPerYear = 426 * secondsPerDay;
+
+            function convertSecondsToDate(seconds) {
+
+                let year = Math.trunc(seconds / secondsPerYear);
+                let secondsRemaining = seconds % secondsPerYear;
+
+                let day = Math.trunc(secondsRemaining / secondsPerDay);
+                secondsRemaining = secondsRemaining % secondsPerDay;
+
+                let hour = Math.trunc(secondsRemaining / secondsPerHour);
+                secondsRemaining = secondsRemaining % secondsPerHour;
+
+                let minute = Math.trunc(secondsRemaining / secondsPerMinute);
+                let second = secondsRemaining;
+
+                return {
+                    y: year, d: day, h: hour, m: minute, s: second, toString() { return `y:${this.y} d:${this.d}` }
+                };
+            }
+
+            // END COPIED
+
 
             $(document).ready(function () {
 
@@ -396,21 +408,33 @@
                 <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
             </svg>
 
-            <div id="mfdScreen">
+            <!--<div id="mfdScreen">
 
                 <div id="onScreenText">
-                    <p id="title">Delta V Summary</p>
-                    <p id="subTitle">Transfer from <span id="originName">origin</span> to <span id="destinationName">destination</span"></p>
-                    <p id="p2"><span class="dvLabel">Ejection</span>     : <span id="ejectDv" class='dv'></span></p>
-                    <p id="p3"><span class="dvLabel">Plane change</span> : <span id="planeDv" class='dv'></span></p>
-                    <p id="p4"><span class="dvLabel">Capture</span>      : <span id="captureDv" class='dv'></span></p>
-                    <p id="p5"><span class="dvLabel">TOTAL</span>        : <span id="totalDv" class="dv"></span></p>
-                </div>
 
-                <svg display="none" class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <table id="table1">
+                        <tr><th colspan="2">DELTA V SUMMARY</th></tr>
+                        <tr><td class="dvLabel">EJECTION</td><td class="data"></td></tr>
+                        <tr><td class="dvLabel">PLANE CHANGE</td><td class="data"></td></tr>
+                        <tr><td class="dvLabel">CAPTURE</td><td class="data"></td></tr>
+                        <tr><td class="dvLabel">TOTAL</td><td class="data"></td></tr>
+
+                        <tr><td class="dataLabel"></td><td></td></tr>
+                    </table>
+                    
+                    <table id="table2">
+                        <tr><th colspan="2">Ejection Orbit</th></tr>
+                        <tr><td class="dvLabel">Departure</td><td class="data"></td></tr>
+                        <tr><td class="dvLabel">Ejection Angle</td><td class="data"></td></tr>
+                        <tr><td class="dvLabel">Ejection Dv</td><td class="data"></td></tr>
+                        
+                    </table>
+                    
+                </div>
+                <svg display="none" class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">-->
 
                     <!-- PRIMARY -->
-                    <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
+                    <!--<circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
 
                     <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none" />
 
@@ -432,7 +456,7 @@
 
                 </svg>
 
-            </div>
+            </div>-->
 
             <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 

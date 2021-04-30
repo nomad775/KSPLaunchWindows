@@ -242,7 +242,7 @@ function createPlanetObject(){
 
     let sma = Number($(this).find("orbit sma").text());
     let ecc = Number($(this).find("orbit ecc").text());
-    let argPe = Number($(this).find("orbit argPe").text() );
+    let argPe = Number($(this).find("orbit argPe").text()) * pi / 180;
     let LAN = Number($(this).find("orbit lan").text()) * pi / 180;
     let theta0 = Number($(this).find("orbit mean0").text());
     let inc = Number($(this).find("orbit inc").text()) * pi / 180;
@@ -251,10 +251,15 @@ function createPlanetObject(){
     let mu = Number($(this).find("mu").text());
     let r = Number($(this).find("radius").text());
 
-    var LnPe = (argPe + LAN) * pi/180;
+    var LnPe = (argPe + LAN);
+
+    console.log(name, LAN.toFixed(3), argPe.toFixed(3), LnPe.toFixed(3));
+
     LnPe %= (2*pi);
     planet = new Planet(name, sma, ecc, inc, LAN, LnPe, theta0, mu, soi, r);
+
     
+
     planets[name] = planet;
  
     index = planets.length-1;
