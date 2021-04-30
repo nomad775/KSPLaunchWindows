@@ -15,7 +15,6 @@
 .fn {
     font-family: "VT323", "Lucida Console", "monospace";
     font-size: 12pt;
-    border-radius: 2px;
     color: greenyellow;
     fill: greenyellow;
     background-color: darkslategrey;
@@ -24,10 +23,10 @@
 
 /*from/for svgSolarSystem*/
 .activeFn {
-    fill: black;
     font-family: "VT323", "Lucida Console", "monospace";
     font-size: 12pt;
     color: black;
+    fill: black;
     background-color: greenyellow;
 }
 
@@ -43,7 +42,7 @@ rect.activeFn {
 #mfdScreen {
     /*position: relative;*/
     width: 360px;
-    /*height: 360px;*/
+    height: 360px;
     background-color: #131339;
 }
 
@@ -52,11 +51,19 @@ rect.activeFn {
     width: 320px;
     padding-left: 20px;
     padding-right: 20px;
-    /*margin-top: 0px;
-    color: greenyellow;*/
+    margin-top: 0px;
+    color: greenyellow;
     font-family: "VT323";
     font-size: 12pt;
     overflow: hidden;
+}
+
+
+table {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 25px;
+    width: 200px;
 }
 
 td {
@@ -66,6 +73,9 @@ td {
     overflow: hidden;
 }
 
+td.data{
+    text-align:right;
+}
 
 /*-----------------------------------------------*/
 /*            --- DISPLAY PANEL --- */
@@ -154,6 +164,7 @@ svg * {
     background-color: #131339;
     vector-effect: non-scaling-stroke;
     border:1px solid red;
+    display: block;
 }
 
 /*from/for svgSolarSystem*/
