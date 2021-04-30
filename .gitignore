@@ -6,3 +6,5 @@ Web.config
 .vs/VSWorkspaceState.json
 *.config
 *.sln
+*.exclude
+/~~ejectionAngle.html
