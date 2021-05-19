@@ -1,8 +1,10 @@
 ﻿body {
-    width: 360px;
+    width: 370px;
     margin: auto;
     background-color: #22324d;
     touch-action: manipulation; /*prevents zoom on double tap*/
+    font-family: "VT323", "Lucida Console", "monospace";
+    font-size: 12pt;
 }
 
 /*-----------------------------------------------*/
@@ -12,31 +14,23 @@
     background-color: #131339;
 }
 
-.fn {
-    font-family: "VT323", "Lucida Console", "monospace";
-    font-size: 12pt;
-    color: greenyellow;
+g.fn text {
     fill: greenyellow;
-    background-color: darkslategrey;
     width: 60px; /*from/for svgSolarSystem*/
 }
 
-/*from/for svgSolarSystem*/
-.activeFn {
-    font-family: "VT323", "Lucida Console", "monospace";
-    font-size: 12pt;
-    color: black;
-    fill: black;
-    background-color: greenyellow;
-}
-
-rect.fn {
+g.fn rect {
     fill: #131339;
 }
 
-rect.activeFn {
-    fill: greenyellow;
+g.activeFn text {
+    fill: #131339;
 }
+
+g.activeFn rect{
+    fill: yellowgreen;
+}
+
 
 
 #mfdScreen {
@@ -59,11 +53,12 @@ rect.activeFn {
 }
 
 
+
 table {
     margin-left: auto;
     margin-right: auto;
     margin-top: 25px;
-    width: 200px;
+    
 }
 
 td {
@@ -73,7 +68,12 @@ td {
     overflow: hidden;
 }
 
+td.dvLabel{
+    width: 100px;
+}
+
 td.data{
+    width: 100px;
     text-align:right;
 }
 
@@ -83,7 +83,7 @@ td.data{
 #displayContainer {
     display: grid;
     width: 350px;
-    grid-template-columns: 150px 150px;
+    grid-template-columns: 160px 160px;
     /*grid-template-rows: 50px 50px 50px 50px 50px;*/
     grid-row-gap: 5px;
     grid-column-gap: 10px;
@@ -109,7 +109,13 @@ td.data{
 }
 
 .paramDisp_inactive {
-    color: #777;
+    color: #ddd;
+    overflow: hidden;
+    padding: 5px;
+    border: 1px solid black;
+    background-color: #858c98;
+    border-radius: 3px;
+    font-size: 12px;
 }
 
 /* LCD screen */
@@ -121,8 +127,24 @@ td.data{
     border-radius: 2px;
     text-align: right;
     height: 18px;
-    
 }
+
+input {
+    height: 16px;
+    width: auto;
+    border: none;
+}
+
+input.activeFn {
+    color: darkslategrey;
+    background-color: greenyellow;
+}
+
+input.fn{
+    color: greenyellow;
+    background-color: darkslategrey;
+}
+
 
 /* inactive LCD screen */
 div.paramDisp_inactive .LCDscreen, div.paramDisp_inactive input {
@@ -135,17 +157,16 @@ div.paramDisp_inactive .LCDscreen, div.paramDisp_inactive input {
 }
 
 
-input {
-    width: auto;
-    border: none;
-}
+/*
 
 .LCDscreen span {
-    display: inline-block; /*inline block needed for tx Ln disp*/
+    display: inline-block;
     height: 20px;
     vertical-align: middle;
     padding-top: 1.5px;
 }
+*/
+/*inline block needed for tx Ln disp*/
 
 
 /*-----------------------------------------------*/
@@ -161,10 +182,8 @@ button {
 /*                 --- SVG ---                   */
 /*-----------------------------------------------*/
 svg * {
-    background-color: #131339;
+   /* background-color: #131339;*/
     vector-effect: non-scaling-stroke;
-    border:1px solid red;
-    display: block;
 }
 
 /*from/for svgSolarSystem*/
