@@ -130,17 +130,29 @@ class svgPartialArc{
     
     update(){
         
-        var a = this.orbit.a;
-        var b = this.orbit.b;
-        var ang = this.orbit.ang;
+        let a = this.orbit.a;
+        let b = this.orbit.b;
+        let ang = this.orbit.ang;
         
-        var ox = this.startObj.attr("cx");
-        var oy = this.startObj.attr("cy");
+        let ox = this.startObj.attr("cx");
+        let oy = this.startObj.attr("cy");
         
-        var dx = this.endObj.attr("cx");
-        var dy = this.endObj.attr("cy");
-        
-        var data = `M ${ox} ${oy} A ${a} ${b} ${ang} 0 0 ${dx} ${dy}`
+        let dx = this.endObj.attr("cx");
+        let dy = this.endObj.attr("cy");
+
+        let ang1 = Math.atan2(-oy, ox);
+        let ang2 = Math.atan2(-dy, dx);
+
+        let f = 0;
+        //console.log(this.jqOrbit.attr("id"));
+
+        if (this.jqOrbit.attr("id") == "destTOF") {
+            f=1
+            let cross = ox * dy - dx * oy;
+            if (cross < 0) f = 0;
+        }
+
+        var data = `M ${ox} ${oy} A ${a} ${b} ${ang} ${f} 0 ${dx} ${dy}`
         
         this.jqOrbit.attr("d", data);
     }
@@ -148,11 +160,17 @@ class svgPartialArc{
 
 class svgPlanet{
     
-    constructor(id, planet, t){
+    constructor(id, planet, t, soi){
         
         this.jqPlanet = $(id);
+        this.jqSOI = $(soi);
+
         this.planet = planet;
-        
+
+        let r_soi = planet.soi * scaleFactor;
+        this.jqSOI.attr("r", r_soi);
+        console.log(r);
+
         this.update(t);
     }
     
@@ -166,6 +184,10 @@ class svgPlanet{
         
         this.jqPlanet.attr("cx", x);
         this.jqPlanet.attr("cy", y);
+
+        this.jqSOI.attr("cx", x);
+        this.jqSOI.attr("cy", y);
+
     }
     
     
@@ -235,8 +257,8 @@ function initialize(){
     svgDestinationOrbit = new svgEllipiticalOrbit("#orbit_destination", destinationPlanet);
     
     // planets
-    svgOriginPlanet = new svgPlanet("#planet_origin", originPlanet, 0);
-    svgDestinationPlanet = new svgPlanet("#planet_destination", destinationPlanet, 0);
+    svgOriginPlanet = new svgPlanet("#planet_origin", originPlanet, 0, "#planetSOI_origin");
+    svgDestinationPlanet = new svgPlanet("#planet_destination", destinationPlanet, 0, "#planetSOI_destination");
     
     // tx orbit
     txOrbit = new TransferOrbit(originPlanet, destinationPlanet);
