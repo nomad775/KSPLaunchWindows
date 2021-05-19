@@ -8,12 +8,19 @@ var transferWindows = [];
 
 var currentTime;
 
-function modRev(angle, places){
-    var a = (angle * 10**places).toFixed(0);
-    var rev = ((2*pi)*10**places).toFixed(0);
-    var rem = a % rev;
-    rem = rem/(10**places);
-    if(rem<0) rem+=2*pi;
+function modRev(angle, places) {
+
+    if (places == undefined || places == 0) places = 6;
+
+    //var a = (angle * 10**places).toFixed(0);
+    //var rev = ((2*pi)*10**places).toFixed(0);
+
+    let rev = 2 * pi;
+    let rem = ((angle % rev) + rev) % rev;
+
+    rem = rem///(10**places);
+
+    //if (rem < 0) rem += 2 * pi;
     
     return rem;
 }
@@ -110,7 +117,10 @@ class Planet{
         //v^2 = k(2/r-1/a)
         //v^2 = [k/p](1+e^2+2*e*cos(?))
     }
-    
+
+    flightAngelAtTheta(theta) {
+        return Math.atan(this.ecc * Math.sin(theta) / (1 + this.ecc * Math.cos(theta)));
+    }
 }
 
 class TransferOrbit{
@@ -134,7 +144,9 @@ class TransferOrbit{
     }
     
     update(t){
-        
+
+        this.t = t;
+
         this.Ln_rdv_mean = (this.originPlanet.MeanLnAtTimeT(t) + pi) % (2*pi);
         
         this.Ln_o = this.originPlanet.LnAtTimeT(t);
@@ -225,10 +237,12 @@ function HyperbolicOrbit(body, peAlt, v_soi){
     let v0 = Math.sqrt(mu/r_pe);
     let deltaV = v1 - v0;
 
+    // theta is angle between a and f (focus), where f = a + r_pe
+    // ejection angle is pi - theta, also is half of turning angle
     let theta = Math.acos(a_hyp / (a_hyp + r_pe));
-    let halfAngle = (pi - theta) * 180/pi;
+    let ejectionAngle = (pi - theta);
 
-    return {deltaV: deltaV, halfAngle: halfAngle};
+    return {deltaV: deltaV, ejectionAngle: ejectionAngle};
 }
 
 
