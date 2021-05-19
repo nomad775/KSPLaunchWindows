@@ -2,7 +2,7 @@
 <!--<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">--> <!--creates a space between svg and div-->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 
-<html>
+<html lang="en">
 <head>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,8 +19,10 @@
 
         var origin;
         var destination;
-        var txOrbit;
+
         var parkOrbit;
+        var ejectionOrbit;
+        var txOrbit;
 
         class Orbit {
 
@@ -37,7 +39,7 @@
             cx = 0;
             cy = 0;
 
-            constructor(ap, pe, LAN, argPe, mu_parent) {
+            constructor(ap, pe, LAN_deg, argPe_deg, mu_parent) {
 
                 this.name = name;
                 this.mu_parent = mu_parent;
@@ -46,11 +48,11 @@
                 this.ecc = (ap - pe) / (ap + pe);
                 this.period = 2 * pi * Math.sqrt(this.sma ** 3 / this.mu_parent);
 
-                this.LnPe = LAN + argPe;
+                this.LnPe = modRev((LAN_deg + argPe_deg) * pi/180);
                 this.mean0 = 0;
 
                 this.theta0 = this.trueAnomaly(this.mean0);
-                this.Ln0 = this.LnPe + this.theta0;
+                this.Ln0 = modRev(this.LnPe + this.theta0);
 
                 this.c = this.ecc * this.sma;
                 this.cx = this.c * Math.cos(this.LnPe);
@@ -63,6 +65,22 @@
                 this.sma = (ap + pe) / 2;
                 this.ecc = (ap - pe) / (ap + pe);
                 this.period = 2 * pi * Math.sqrt(this.sma ** 3 / this.mu_parent);
+            }
+
+            updateOrientation(LAN_deg, argPe_deg) {
+
+                LAN_deg = Number(LAN_deg);
+                argPe_deg = Number(argPe_deg);
+
+                this.LnPe = modRev((LAN_deg + argPe_deg) * pi / 180);
+                this.mean0 = 0;
+
+                this.theta0 = this.trueAnomaly(this.mean0);
+                this.Ln0 = modRev(this.LnPe + this.theta0);
+
+                this.c = this.ecc * this.sma;
+                this.cx = this.c * Math.cos(this.LnPe);
+                this.cy = this.c * Math.sin(this.LnPe);
             }
 
             trueAnomaly(M) {
@@ -78,14 +96,6 @@
                 var theta = 2 * Math.atan(Math.sqrt((1 + this.ecc) / (1 - this.ecc)) * Math.tan(E / 2))
 
                 return modRev(theta, 4);
-            }
-
-            MeanLnAtTimeT(t) {
-                var percent = t / this.period;
-                var M = percent * 2 * pi + this.mean0;
-                var Ln = M + this.LnPe;
-
-                return modRev(Ln, 4);
             }
 
             LnAtTimeT(t) {
@@ -111,6 +121,48 @@
                 return Math.sqrt(this.mu_parent * (2 / r - 1 / this.sma))
             }
 
+            orbitTatLn(Ln) {
+
+                let theta = modRev(Ln - this.LnPe);
+                let E = 2 * Math.atan(Math.tan(theta / 2) / Math.sqrt((1 + this.ecc) / (1 - this.ecc)));
+                E = modRev(E);
+                let M = E - this.ecc * Math.sin(E);
+                
+                let obtT = M / (2 * pi) * this.period;
+
+                console.log("ln", Ln);
+                console.log("theta", theta);
+                console.log("M", M);
+                console.log("obt T", obtT);
+                return obtT;
+
+            }
+
+            solveAforPeriod(Tseconds) {
+                return Math.cbrt((Tseconds / (2 * pi)) ** 2 * this.mu_parent);
+            }
+
+            phaseOrbit(degs, Ln) {
+
+                let r1 = this.rAtLn(Ln);
+                let v1 = this.v(r1);
+
+                let t = this.period * (1- degs / 360);
+                this.solveAforPeriod(t);
+                
+                let r2 = 2 * this.sma - r1;
+
+                let ap = r1 > r2 ? r1 : r2;
+                let pe = r1 < r2 ? r1 : r2;
+                this.updateApPe(ap, pe);
+
+                let v2 = this.v(r1);
+                let deltaV = v2 - v1;
+                let tmnv = this.TatLn(Ln);
+
+                return { dv: deltaV, t: tmnv };
+            }
+
             dvPlaneChange(Ln, inc) {
 
                 let v = this.v(this.rAtLn(Ln));
@@ -119,50 +171,143 @@
                 return dV;
             }
 
+            MeanLnAtTimeT(t) {
+                var percent = t / this.period;
+                var M = percent * 2 * pi + this.mean0;
+                var Ln = M + this.LnPe;
 
+                return modRev(Ln, 4);
+            }
         }
 
-        function calculateEjectionOrbit(apAlt, peAlt) {
+        function calculateEjectionDv(apAlt, peAlt) {
             
-            if (peAlt == 0) peAlt = apAlt;
+            if (apAlt == 0) apAlt = peAlt;
 
             parkOrbit.updateApPe(apAlt + origin.r, peAlt + origin.r);
 
             let v_soi = txOrbit.v_depart - txOrbit.vo;
+            ejectionOrbit = HyperbolicOrbit(origin, peAlt, v_soi);
+            
+            fields["dvEjection"].value = ejectionOrbit.deltaV.toFixed(0);
+            fields["ejectionAngle"].value = (ejectionOrbit.ejectionAngle * 180/pi).toFixed(1);
+            
+            fields["sma"].value = parkOrbit.sma;
 
-            var eo = HyperbolicOrbit(origin, 100000, v_soi);
-
-            fields["dvEjection"].value = eo.deltaV.toFixed(2);
-
-            updateDisplay("ejectionAngle", eo.halfAngle.toFixed(1));
-            updateDisplay("dvEjection", eo.deltaV.toFixed(2));
-
+            updateDisplay("sma");
+            updateDisplay("ejectionAngle");
+            updateDisplay("dvEjection");
         }
 
         function calculatePlaneChangeDv() {
-            fields["dvPlaneChange"].value = txOrbit.planeChangeDv().toFixed(2);
-            updateDisplay("dvPlaneChange", txOrbit.planeChangeDv().toFixed(2));
+            
+            fields["dvPlaneChange"].value = txOrbit.planeChangeDv().toFixed(1);
+            updateDisplay("dvPlaneChange");
         }
 
-        function calculateCapture() {
-
+        function calculateCaptureDv(peAlt) {
+            
             let v_soi = txOrbit.v_arrive - txOrbit.vd;
+            captureOrbit = new HyperbolicOrbit(destination, peAlt, v_soi);
+            let dv = captureOrbit.deltaV;
 
-            captureOrbit = new HyperbolicOrbit(destination, 100000, v_soi);
+            let r = Number(destination.r) + Number(peAlt);
+            let v_pe_cir = Math.sqrt(destination.mu / r);
+            let v_pe_hyp = v_pe_cir + dv;
 
-            fields["dvCapture"].value = captureOrbit.deltaV.toFixed(2);
+            fields["capVsoi"].value = -v_soi.toFixed(0);
+            fields["capVpeHyp"].value = v_pe_hyp.toFixed(0);
+            fields["capVpeCir"].value = v_pe_cir.toFixed(0);
+            fields["capDv"].value = captureOrbit.deltaV.toFixed(0);
 
-            //updateDisplay("dv_capture", captureOrbit.halfAngle);
-            updateDisplay("dvCapture", captureOrbit.deltaV.toFixed(2));
+            updateDisplay("capVsoi", fields["capVsoi"].value);
+            updateDisplay("capVpeHyp");
+            updateDisplay("capVpeCir");
+            updateDisplay("capDv", captureOrbit.deltaV.toFixed(0));
         }
 
-    </script>
+        function calculatePhaseChange() {
 
-    <script>
+            parkOrbit.updateOrientation(fields["lan"].value, fields["argPe"].value);
 
-        var buttons = {};
-        var fields = {};
-        var activeField = {};
+            let utY = fields["utY"].value;
+            let utD = fields["utD"].value;
+            let utH = fields["utH"].value;
+            let utM = fields["utM"].value;
+
+            let utS = convertDateToSeconds(utY, utD, utH, utM);
+
+            let tPeY = fields["tPeY"].value;
+            let tPeD = fields["tPeD"].value;
+            let tPeH = fields["tPeH"].value;
+            let tPeM = fields["tPeM"].value;
+
+            let secondsToPe = convertDateToSeconds(tPeY, tPeD, tPeH, tPeM, true);
+            let orbitTnow = parkOrbit.period - secondsToPe;
+            
+            let LnTx = modRev(txOrbit.Ln_o + pi / 2 - ejectionOrbit.ejectionAngle, 4);
+            let orbitTLnTx = parkOrbit.orbitTatLn(LnTx);
+
+            let timeToLnTx = orbitTLnTx - orbitTnow;
+            if (timeToLnTx < 0) timeToLnTx += parkOrbit.period;
+
+            let deltaT = txOrbit.t - utS - timeToLnTx;
+            let orbits = deltaT / parkOrbit.period;
+
+            let r1 = parkOrbit.rAtLn(LnTx)
+            let v1 = parkOrbit.v(r1);
+
+            // solve for N (truncated) orbits (slower)
+            let nOrbits = Math.floor(orbits);
+
+            let newPeriod1 = deltaT / nOrbits;
+            let newSMA1 = parkOrbit.solveAforPeriod(newPeriod1);
+            let r2 = 2 * newSMA1 - r1;
+
+            parkOrbit.updateApPe(r1, r2);
+
+            let v2 = parkOrbit.v(r1);
+            let dv1 = v2 - v1;
+
+            // solve for N+1 orbits (faster)
+
+            let newPeriod2 = deltaT / (nOrbits + 1);
+            let newSMA2 = parkOrbit.solveAforPeriod(newPeriod2);
+            let r3 = 2 * newSMA2 - r1;
+            parkOrbit.updateApPe(r1, r3);
+            let v3 = parkOrbit.v(r1);
+            let dv2 = v1 - v3;
+
+            fields["lnTx"].value = (LnTx * 180 / pi).toFixed(1);
+            fields["phaseMnvT"].value = convertSecondsToDate(timeToLnTx);
+            fields["phaseOrbits"].value = orbits.toFixed(3);
+
+            fields["phasePe"].value = ((r1 - origin.r) / 1000).toFixed(0);
+            fields["phaseAp"].value = ((r2 - origin.r)/1000).toFixed(0);
+            fields["phasePeriod"].value = convertSecondsToDate(newPeriod1);
+            fields["phaseDv"].value = dv1.toFixed(2);
+
+            fields["phasePe2"].value = ((r1 - origin.r) / 1000).toFixed(0);
+            fields["phaseAp2"].value = ((r3 - origin.r) / 1000).toFixed(0);
+            fields["phasePeriod2"].value = convertSecondsToDate(newPeriod2);
+            fields["phaseDv2"].value = dv2.toFixed(2);
+
+            updateDisplay("lnTx");
+            updateDisplay("phaseOrbits");
+            updateDisplay("phaseMnvT");
+
+            updateDisplay("phasePe");
+            updateDisplay("phaseAp");
+            updateDisplay("phasePeriod");
+            updateDisplay("phaseDv");
+
+            updateDisplay("phasePe2");
+            updateDisplay("phaseAp2");
+            updateDisplay("phasePeriod2");
+            updateDisplay("phaseDv2");
+
+            activeButton.setInactive();
+        }
 
         function hyp(a, alpha) {
 
@@ -210,35 +355,25 @@
 
         }
 
-        function setActiveFunction(id) {
-            //deactive current active field
+    </script>
 
-            $(buttons[id].labelElement).addClass("fn");
-            $(buttons[id].labelElement).removeClass("activeFn");
-            $("#activeFunction").attr("fill", "none");
+    <script>
 
-            if (id == "none") {
-                
-                return;
-            }
+        // Future controller
 
-            $(buttons[id].labelElement).addClass("activeFn");
-            $(buttons[id].labelElement).removeClass("fn");
+        var buttons = {};
+        var fields = {};
 
-            $("#activeFunction").attr("x", buttons[id].x - 50 / 2).attr("fill", "greenyellow");
-        }
+        var activePage = {};
+        var activeButton = {};
+        var activeField = {};
 
         function setActiveField(id) {
-
-            console.log(id);
-            
+            // sets field to receive input
 
             //deactive current active field
-            $(activeField.labelElement).addClass("fn");
-            $(activeField.labelElement).removeClass("activeFn");
-
-            $("#activeButton").attr("fill", "none");
-            activeField.value = $(activeField.receiver).val();
+            $(activeField.dataElement).addClass("fn");
+            $(activeField.dataElement).removeClass("activeFn");
 
             if (id == "none" || id == activeField.id) {
                 activeField = {};
@@ -246,21 +381,24 @@
             }
 
             activeField = fields[id];
-           
-            $(activeField.receiver).val("");
-            activeField.value = NaN;
 
+            $(activeField.dataElement).val("");
+            //activeField.value = NaN;
 
-            //calculateEjectionOrbit();
-
-            $(activeField.labelElement).addClass("activeFn");
-            $(activeField.labelElement).removeClass("fn");
-
-            $("#activeButton").attr("x", activeField.x - 50 / 2).attr("fill", "greenyellow");
+            $(activeField.dataElement).addClass("activeFn");
+            $(activeField.dataElement).removeClass("fn");
 
             //scroll to keyboard
             window.scroll(0, 400);
 
+        }
+
+        
+        function updateDisplay(id, override) {
+            let field = fields[id];
+            let value = field.value;
+            $(field.dataElement).each(function () { $(this).text(value) });
+            $(field.dataElement).each(function () { $(this).val(value) });
         }
 
         function keyPress(event, k) {
@@ -269,126 +407,24 @@
             event.stopPropagation();
 
             if (k == "E") {
-                setActiveField('none');
+                activeField.value = $(activeField.dataElement).val();
+                activeField.callback();
                 return;
             }
 
             if (k == "B") {
-                let field = $(activeField.receiver);
+                let field = $(activeField.dataElement);
                 let newVal = field.val().slice(0, -1);
                 field.val(newVal);
-                console.log(newVal);
+                //console.log(newVal);
                 return;
             }
 
-            var receiver = $(activeField.receiver);
-            receiver.val(receiver.val() + k);
-
-            //var keyEvent = $.Event("keypress");
-            //keyEvent.key = "A";
-            //keyEvent.which = "A";
-
-            //receiver.trigger(keyEvent);
-
-
-            //$('#myInputId').trigger(jQuery.Event('keypress', { keycode: 13 }));
-
-            //document.dispatchEvent(new KeyboardEvent('keypress', { 'key': "X" }));
-            //activeOutput.val(activeOutput.val() + k);
-
-            //receiver.trigger(new Event('keypress', { keyCode: k }));
-            console.log(receiver.val());
-        }
-
-        function buttonPress(index) {
-
-            let buttonLabelID = buttons[index].labelElement;
-            
-            $(buttonLabelID).removeClass("activeFn").addClass("fn");
-            $("#activeLabel").removeClass("activeFn").addClass("fn");
-
-
-            if (index != "none") {
-                activeButton = index;
-                $("#fn" + index).addClass("activeFn").removeClass("fn");
-
-                let x = Number(buttons[index].x - buttons[index].width / 2)
-                console.log(buttons[index].x, buttons[index].width, x);
-
-                $("#activeLabel").attr("x", x).addClass("activeFn");
-                buttons[index].fn();
-            }
+            var dataElement = $(activeField.dataElement);
+            dataElement.val(dataElement.val() + k);
 
         }
 
-        function updateDisplay(id, value) {
-            let field = fields[id];
-            //$(field.receiver).text(value);
-            $(field.receiver).each(function () { $(this).text(value) });
-        }
-
-        function initializeFunctions() {
-
-            //let fn0 = () => { setActiveField("UT_y") };
-            let fn0 = () => { setActiveField("pe")};
-            let fn1 = () => { setActiveField("ap")};
-            let fn2 = () => { setActiveField("inc")};
-
-            //buttons["t1"] = { x: -90, width: 60, label: "SUMMARY", labelElement: "#t1Label", fn: fn0 };
-            buttons["park"] = { x:-90, width: 60, label: "PARK", labelElement: "#t1Label", fn: fn1 };
-            buttons["phase"] = { x: -90, width: 60, label: "PHASE", labelElement: "#t2Label", fn: fn2 };
-            buttons["t3"] = { x: -90, width: 60, label: "CAPTURE", labelElement: "#t3Label", fn: fn0 };
-            buttons["t5"] = { x: 150, width: 60, label: "PREV", labelElement: "#t5Label", fn: fn0 };
-
-            buttons["b0"] = { x: -150, width: 60, label: "SET PE", labelElement: "#b0Label", fn: fn0 };
-            buttons["b1"] = { x: -90, width: 60, label: "SET AP", labelElement: "#b1Label",fn: fn1 };
-            buttons["b2"] = { x: -30, width: 60, label: "SET INC", labelElement: "#b2Label",fn: fn0 };
-            buttons["b3"] = { x: 30, width: 60, label: "SET LAN", labelElement: "#b3Label",fn: fn0 };
-
-            for (let id in buttons) {
-                console.log(buttons[id].label);
-                let button = buttons[id];
-                $(button.labelElement).text(button.label);
-            };
-
-
-        }
-
-        function initializeFields() {
-
-            fields["origin"] = { id: "origin", label: "ORIGIN", value: "Origin", x: 0, buttonLabel: '', receiver: "#originName" };
-            fields["destination"] = { id: "destination", label: "DESTINATION", value: "Destination", x: 0, buttonLabel: '', receiver: "#destinationName" };
-
-            //ejection dv used twice, receiving element qry string uses "starts with" selector
-            $("#table1 tr:eq(1) td:eq(1)").attr("id", "ejectDv1");
-            $("#table2 tr:eq(3) td:eq(1)").attr("id", "ejectDv2");
-            fields["dvEjection"] = { id: "dvEjection", label: "Ejection orbit dV", value: 0, x: 0, buttonLabel: '', receiver: "[id^='ejectDv']" };
-
-            //trip summary
-            fields["dvPlaneChange"] = { id: "dvPlaneChange", label: "Plane change dV", value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(2) td:eq(1)" };
-            fields["dvCapture"] = { id: "dvCapture", label: "Capture dV", value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(3) td:eq(1)" };
-            fields["dvTotal"] = { id: "dvTotal", label: "TOTAL", value: 0, x: 0, buttonLabel: '', receiver: "#table1 tr:eq(4) td:eq(1)" };
-
-            //ejection orbit
-            fields["tod"] =           {label: "TOD",            value: 0, labelElement: "#table2 tr:eq(1) td:eq(0)", receiver: "#table2 tr:eq(1) td:eq(1)"};
-            fields["ejectionAngle"] = {label: "EJECTION ANGLE", value: 0, labelElement: "#table2 tr:eq(2) td:eq(0)", receiver: "#table2 tr:eq(2) td:eq(1)"};
-
-
-            //input fields
-            fields["pe"] = { value: 0, x: -150, labelElement: "#b0Label", receiver: "input[name='pe']" };
-            fields["ap"] = { value: 0, x: -90,  labelElement: "#b1Label", receiver: "input[name='ap']" };
-
-            //callbacks
-            let cb0 = () => { setActiveField("UT_d") };
-            let cb1 = () => { setActiveField("UT_h") };
-            let cb2 = () => { setActiveField("UT_m") };
-            let cb3 = () => { setActiveField("none"); buttonPress("none") };
-
-            fields["UT_m"] = { value: 00, outputQry: "input[name='UT_m']", button: 0, callback: cb3 };
-            fields["UT_h"] = { value: 0,  outputQry: "input[name='UT_h']", button: 0, callback: cb2 };
-            fields["UT_d"] = { value: 000, outputQry: "input[name='UT_d']", button: 0, callback: cb1 };
-            fields["UT_y"] = { value: 000, outputQry: "input[name='UT_y']", button: 0, callback: cb0 };
-        }
 
         function initializeEjectionOrbit() {
 
@@ -401,37 +437,395 @@
             origin = planets[originName];
             destination = planets[destinationName];
 
-            updateDisplay("origin", originName);
-            updateDisplay("destination", destinationName);
-
-            updateDisplay("tod", convertSecondsToDate(t).toString())
-
+            fields["tod"].value = convertSecondsToDate(t).toString();
+            updateDisplay("tod")
 
             txOrbit = new TransferOrbit(origin, destination)
             txOrbit.update(t);
 
             parkOrbit = new Orbit(200000 + origin.r, 200000 + origin.r, 0, 0, origin.mu);
+            updateDisplay("sma", parkOrbit.sma.toFixed(0));
 
-            calculateEjectionOrbit(100000, 100000);
+            calculateEjectionDv(200000, 200000);
             calculatePlaneChangeDv();
-            calculateCapture();
+            calculateCaptureDv(200000);
+            total();
 
-            let dvTotal = Number(fields["dvEjection"].value) + Number(fields["dvPlaneChange"].value) + Number(fields["dvCapture"].value);
+        }
 
-            updateDisplay("dvTotal", dvTotal.toFixed(2));
+        function updateEjectionOrbit() {
+            calculateEjectionDv(fields["parkAp"].value * 1000, fields["parkPe"].value * 1000);
+            total();
+            activeButton.setInactive();
+        }
 
-            setActiveFunction("park");
+        function updateCaptureOrbit() {
+            calculateCaptureDv(fields["capPe"].value * 1000);
+            updateDisplay("capDv", fields["capDv"].value);
+
+            //fields["dvCapture"].value = captureOrbit.deltaV.toFixed(0);
+            //updateDisplay("dvCapture", captureOrbit.deltaV.toFixed(0));
+
+            total();
+            activeButton.setInactive();
+        }
+
+        function total() {
+            let dvTotal = Number(fields["dvEjection"].value) + Number(fields["dvPlaneChange"].value) + Number(fields["capDv"].value);
+            fields["dvTotal"].value = dvTotal.toFixed(1);
+            updateDisplay("dvTotal");
+        }
+
+        function clearTable() {
+
+            $("#table2 td").text("");
+            $("#table3 td").text("");
+        }
+
+        function setParkPage() {
+
+            clearTable();
+
+            activePage.setInactive();
+            activePage = buttons["t1"];
+            activePage.setActive();
+
+            buttons["b0"].label = "SET PE";
+            buttons["b0"].fn = () => { setActiveField("parkPe") };
+
+            buttons["b1"].label = "SET AP";
+            buttons["b1"].fn = () => { setActiveField("parkAp") };
+
+            buttons["b2"].label = "";
+            buttons["b2"].fn = () => { setActiveField("inc") };
+
+            buttons["b3"].label = "";
+            buttons["b3"].fn = () => { setActiveField("lan") };
+
+            buttons["b4"].label = "";
+            buttons["b4"].fn = "";
+
+            buttons["b5"].label = "CALC";
+            buttons["b5"].fn = updateEjectionOrbit;
+
+            updateDisplay("parkPe", fields["parkPe"].value);
+            updateDisplay("parkAp", fields["parkAp"].value);
+
+            $("#pePanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#apPanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#lanPanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#argPePanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#utPanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#tPePanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+
+            $("#table2 th").text("Ejection Orbit");
+            
+            $(fields["sma"].labelElement).text(fields["sma"].label);
+            $(fields["tod"].labelElement).text(fields["tod"].label);
+            $(fields["ejectionAngle"].labelElement).text(fields["ejectionAngle"].label);
+            $(fields["dvEjection"].labelElement).text(fields["dvEjection"].label);
+
+            $(fields["sma"].dataElement).text(fields["sma"].value);
+            $(fields["tod"].dataElement).text(fields["tod"].value);
+            $(fields["ejectionAngle"].dataElement).text(fields["ejectionAngle"].value);
+            $(fields["dvEjection"].dataElement).text(fields["dvEjection"].value);
+
+
+        }
+
+        function setPhasePage() {
+
+            clearTable();
+
+            activePage.setInactive();
+            activePage = buttons["t2"];
+            activePage.setActive();
+
+            buttons["b0"].label = "SET UT";
+            buttons["b0"].fn = () => { setActiveField("utY") };
+
+            buttons["b1"].label = "SET T-PE";
+            buttons["b1"].fn = () => { setActiveField("tPeY") };
+
+            buttons["b2"].label = "SET LAN";
+            buttons["b2"].fn = () => { setActiveField("lan") };
+
+            buttons["b3"].label = "SET ARGPE";
+            buttons["b3"].fn = () => { setActiveField("argPe") };
+
+            buttons["b4"].label = "";
+            buttons["b4"].fn = "";
+
+            buttons["b5"].label = "CALC";
+            buttons["b5"].fn = calculatePhaseChange;
+
+            updateDisplay("parkPe", fields["parkPe"].value);
+            updateDisplay("parkAp", fields["parkAp"].value);
+            updateDisplay("lan", fields["lan"].value);
+            updateDisplay("argPe", fields["argPe"].value);
+
+            $("#pePanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#apPanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#lanPanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#argPePanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#utPanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#tPePanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+
+            $("#table2 th").text("Phase Park Orbit");
+
+            $(fields["lnTx"].labelElement).text(fields["lnTx"].label);
+            $(fields["phaseMnvT"].labelElement).text(fields["phaseMnvT"].label);
+            $(fields["phaseOrbits"].labelElement).text(fields["phaseOrbits"].label);
+
+            $(fields["phasePe"].labelElement).text(fields["phasePe"].label);
+            $(fields["phaseAp"].labelElement).text(fields["phaseAp"].label);
+            $(fields["phasePeriod"].labelElement).text(fields["phasePeriod"].label);
+            $(fields["phaseDv"].labelElement).text(fields["phaseDv"].label);
+
+            updateDisplay("lnTx");
+            updateDisplay("phaseMnvT");
+            updateDisplay("phaseOrbits");
+
+            updateDisplay("phasePe");
+            updateDisplay("phaseAp");
+            updateDisplay("phasePeriod");
+            updateDisplay("phaseDv");
+        }
+
+        function setCapturePage() {
+
+            clearTable();
+
+            activePage.setInactive();
+            activePage = buttons["t3"];
+            activePage.setActive();
+
+            buttons["b0"].label = "SET PE";
+            buttons["b0"].fn = () => { setActiveField("capPe") };
+
+            buttons["b1"].label = "SET AP";
+            buttons["b1"].fn = () => { setActiveField("capAp") };
+
+            buttons["b2"].label = "";
+            buttons["b2"].fn = () => { };
+
+            buttons["b3"].label = "";
+            buttons["b3"].fn = () => { };
+
+            buttons["b4"].label = "";
+            buttons["b4"].fn = "";
+
+            buttons["b5"].label = "CALC";
+            buttons["b5"].fn = updateCaptureOrbit;
+
+            updateDisplay("capPe", fields["capPe"].value);
+            updateDisplay("capAp", fields["capAp"].value);
+
+            $("#pePanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#apPanelUnit").removeClass("paramDisp_inactive").addClass("paramDisp");
+            $("#lanPanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#argPePanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#utPanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+            $("#tPePanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
+
+            $("#table2 th").text("Capture Orbit");
+
+            $(fields["capVsoi"].labelElement).text(fields["capVsoi"].label);
+            $(fields["capVpeHyp"].labelElement).text(fields["capVpeHyp"].label);
+            $(fields["capVpeCir"].labelElement).text(fields["capVpeCir"].label);
+            $(fields["capDv"].labelElement).text(fields["capDv"].label);
+
+            updateDisplay("capVsoi", fields["capVsoi"].value);
+            updateDisplay("capVpeHyp", fields["capVpeHyp"].value);
+            updateDisplay("capVpeCir", fields["capVpeCir"].value);
+            updateDisplay("capDv", fields["capDv"].value);
+
+        }
+
+
+        function setPageButtons() {
+
+            buttons["t0"].label = "FN"
+            buttons["t0"].fn = () => { activeButton.setInactive(); };
+
+            buttons["t1"].label = "PARK"
+            buttons["t1"].fn = setParkPage;
+
+            buttons["t2"].label = "PHASE"
+            buttons["t2"].fn = setPhasePage;
+
+            buttons["t3"].label = "CAPTURE"
+            buttons["t3"].fn = setCapturePage;
+
+            buttons["t4"].label = ""
+            buttons["t4"].fn = "";
+
+            buttons["t5"].label = ""
+            buttons["t5"].fn = "";
+
+            activePage = buttons["t0"];
+            activePage.setActive();
+
+        }
+
+        function initializeButtons() {
+
+            buttons["b0"] = new Button("#btnB0", "#btnLabelB0");
+            buttons["b1"] = new Button("#btnB1", "#btnLabelB1");
+            buttons["b2"] = new Button("#btnB2", "#btnLabelB2");
+            buttons["b3"] = new Button("#btnB3", "#btnLabelB3");
+            buttons["b4"] = new Button("#btnB4", "#btnLabelB4");
+            buttons["b5"] = new Button("#btnB5", "#btnLabelB5");
+            
+            buttons["t0"] = new Button("#btnT0", "#btnLabelT0");
+            buttons["t1"] = new Button("#btnT1", "#btnLabelT1");
+            buttons["t2"] = new Button("#btnT2", "#btnLabelT2");
+            buttons["t3"] = new Button("#btnT3", "#btnLabelT3");
+            buttons["t4"] = new Button("#btnT4", "#btnLabelT4");
+            buttons["t5"] = new Button("#btnT5", "#btnLabelT5");
+        }
+
+
+        function initGlobalFields() {
+
+            let setInactive = () => { activeButton.setInactive(); setActiveField("none"); }
+
+            fields["origin"] = { id: "origin", label: "ORIGIN", value: "Origin", x: 0, buttonLabel: '', dataElement: "#originName" };
+            fields["destination"] = { id: "destination", label: "DESTINATION", value: "Destination", x: 0, buttonLabel: '', dataElement: "#destinationName" };
+
+
+            // PARK - INPUT
+            fields["parkPe"] = { value: 101, dataElement: "input[name='pe']", callback: setInactive };
+            fields["parkAp"] = { value: 102, dataElement: "input[name='ap']", callback: setInactive };
+
+            // PARK - OUTPUT
+            fields["sma"] = { value: 0, label: "PARK SMA", labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
+            fields["tod"] = { value: 0, label: "TOD", labelElement: "#table2 tr:eq(2) td:eq(0)", dataElement: "#table2 tr:eq(2) td:eq(1)" };
+            fields["ejectionAngle"] = { value: 0, label: "EJECTION ANGLE", labelElement: "#table2 tr:eq(3) td:eq(0)", dataElement: "#table2 tr:eq(3) td:eq(1)" };
+
+
+            // PHASE - INPUT FIELDS
+
+            //callbacks
+            let cb0 = () => { setActiveField("utD") };
+            let cb1 = () => { setActiveField("utH") };
+            let cb2 = () => { setActiveField("utM") };
+            let cb3 = () => { setActiveField("none"); activeButton.setInactive(); };
+
+            fields["utY"] = { value: 001, dataElement: "input[name='utY']", callback: cb0 };
+            fields["utD"] = { value: 211, dataElement: "input[name='utD']", callback: cb1 };
+            fields["utH"] = { value: 5, dataElement: "input[name='utH']", callback: cb2 };
+            fields["utM"] = { value: 15, dataElement: "input[name='utM']", callback: cb3 };
+
+            fields["tPeY"] = { value: 0, dataElement: "input[name='tPeY']", callback: () => { setActiveField("tPeD") } };
+            fields["tPeD"] = { value: 2, dataElement: "input[name='tPeD']", callback: () => { setActiveField("tPeH") } };
+            fields["tPeH"] = { value: 5, dataElement: "input[name='tPeH']", callback: () => { setActiveField("tPeM") } };
+            fields["tPeM"] = { value: 51, dataElement: "input[name='tPeM']", callback: () => { setActiveField("none"); activeButton.setInactive(); } };
+
+            fields["lan"] = { value: 7.5, labelElement: "#b3Label", dataElement: "input[name='lan']", callback: setInactive };
+            fields["argPe"] = { value: 149, labelElement: "#b3Label", dataElement: "input[name='argPe']", callback: setInactive };
+
+            //output fields
+
+            fields["lnTx"] = { value: 0, label: "LN DEPART",           labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
+            fields["phaseMnvT"] = { value: 0, label: "MNV T",          labelElement: "#table2 tr:eq(2) td:eq(0)", dataElement: "#table2 tr:eq(2) td:eq(1)" };
+
+            fields["phaseOrbits"] = { value: 0, label: "ORBITS UNTIL DEPART", labelElement: "#table2 tr:eq(3) td:eq(0)", dataElement: "#table2 tr:eq(3) td:eq(1)" };
+
+            fields["phasePe"] =   { value: 0, label: "SET PE",       labelElement: "#table3 tr:eq(0) td:eq(0)", dataElement: "#table3 tr:eq(0) td:eq(1)" };
+            fields["phaseAp"] =   { value: 0, label: "SET AP",       labelElement: "#table3 tr:eq(1) td:eq(0)", dataElement: "#table3 tr:eq(1) td:eq(1)" };
+            fields["phasePeriod"] = { value: 0, label: "SET PERIOD", labelElement: "#table3 tr:eq(2) td:eq(0)", dataElement: "#table3 tr:eq(2) td:eq(1)" };
+            fields["phaseDv"] =   { value: 0, label: "PHASE DV",     labelElement: "#table3 tr:eq(3) td:eq(0)", dataElement: "#table3 tr:eq(3) td:eq(1)" };
+
+            fields["phasePe2"] = { value: 0, label: "SET PE",         labelElement: "#table3 tr:eq(0) td:eq(0)", dataElement: "#table3 tr:eq(0) td:eq(2)" };
+            fields["phaseAp2"] = { value: 0, label: "SET AP",         labelElement: "#table3 tr:eq(1) td:eq(0)", dataElement: "#table3 tr:eq(1) td:eq(2)" };
+            fields["phasePeriod2"] = { value: 0, label: "SET PERIOD", labelElement: "#table3 tr:eq(2) td:eq(0)", dataElement: "#table3 tr:eq(2) td:eq(2)" };
+            fields["phaseDv2"] = { value: 0, label: "PHASE DV",       labelElement: "#table3 tr:eq(3) td:eq(0)", dataElement: "#table3 tr:eq(3) td:eq(2)" };
+
+
+            // CAPTURE INPUT FIELDS
+            fields["capPe"] = { value: 100, labelElement: "#b0Label", dataElement: "input[name='pe']", callback: setInactive };
+            fields["capAp"] = { value: 100, labelElement: "#b1Label", dataElement: "input[name='ap']", callback: setInactive };
+
+            fields["capVsoi"] =   { value: 0, label: "V SOI",    labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
+            fields["capVpeHyp"] = { value: 0, label: "V PE HYP", labelElement: "#table2 tr:eq(2) td:eq(0)", dataElement: "#table2 tr:eq(2) td:eq(1)" };
+            fields["capVpeCir"] = { value: 0, label: "V PE CIR", labelElement: "#table2 tr:eq(3) td:eq(0)", dataElement: "#table2 tr:eq(3) td:eq(1)" };
+            fields["capDv"] =     { value: 0, label: "CAPTURE DV ", labelElement: "#table2 tr:eq(4) td:eq(0)", dataElement: "[id^='capDv']" };
+
+            //trip summary
+
+            //ejection dv used twice, receiving element qry string uses "starts with" selector
+            $("#table1 tr:eq(1) td:eq(1)").attr("id", "ejectDv1");
+            $("#table2 tr:eq(4) td:eq(1)").attr("id", "ejectDv2");
+
+            $("#table1 tr:eq(3) td:eq(1)").attr("id", "capDv1");
+            $("#table2 tr:eq(4) td:eq(1)").attr("id", "capDv2");
+
+            fields["dvEjection"] = { value: 0, label: "EJECTION DV", labelElement: "#table2 tr:eq(4) td:eq(0)", dataElement: "[id^='ejectDv']" };
+
+            fields["dvPlaneChange"] = { value: 0, label: "PLANE CHANGE", dataElement: "#table1 tr:eq(2) td:eq(1)" };
+            fields["dvTotal"] =       { value: 0, label: "TOTAL",        dataElement: "#table1 tr:eq(4) td:eq(1)" };
+        }
+
+
+        class Button {
+
+            _label = "";
+            _fn;
+            _isActive = false;
+
+            constructor(btnElementStr, labelElementStr) {
+                this.buttonElement = $(btnElementStr);
+                this.labelElement = $(labelElementStr);
+            }
+            
+            setActive() {
+                
+                this._isActive = true;
+                this.labelElement.parent().addClass("activeFn");
+
+                //if (activeButton._label!="") activeButton.setInactive();
+                activeButton = this;
+            }
+
+            setInactive() {
+                this._isActive = false;
+                this.labelElement.parent().removeClass("activeFn");
+            }
+
+            click() {
+                this.setActive();
+                this._fn();
+            }
+
+            set label(theLabel) {
+                this._label = theLabel;
+                this.labelElement.text(theLabel);
+            }
+
+            set fn(fn) {
+                this._fn = fn;
+            }
+
         }
 
         function initialize() {
-            initializeFunctions();
-            initializeFields();
+            initGlobalFields();
+            initializeButtons();
+            setPageButtons()
             initializeEjectionOrbit();
+            setParkPage();
         }
 
         $(document).ready(function () {
             //hyp();
             getPlanetsXML(initialize);
+
+            console.log(modRev(15 * pi / 180) * 180 / pi);  //15
+            console.log(modRev(-15 * pi / 180) * 180 / pi); //345
+            console.log(modRev(430 * pi / 180) * 180 / pi); //70
+            console.log(modRev(-430 * pi / 180) * 180 / pi);//290
+
         })
 
 
@@ -457,10 +851,22 @@
             let second = secondsRemaining;
 
             return {
-                y: year, d: day, h: hour, m: minute, s: second, toString() { return `y:${this.y} d:${this.d}` }
+                y: year, d: day, h: hour, m: minute, s: second, toString() { return `y:${this.y} d:${this.d}  ${this.h}:${this.m}` }
             };
         }
 
+        function convertDateToSeconds(year, day, hour, minute, elapsedTime=false) {
+
+            if (elapsedTime) { year++; day++; }
+
+            var seconds = (year-1) * secondsPerYear;
+            seconds += (day-1) * secondsPerDay;
+            seconds += hour * secondsPerHour;
+            seconds += minute * secondsPerMinute;
+
+            seconds = seconds > 0 ? seconds : 0;
+            return seconds;
+        }
         // END COPIED
 
 
@@ -468,40 +874,77 @@
     </script>
 
 </head>
+
 <body>
 
     <div id="mfd">
 
         <svg id="topFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-            <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
-
             <line x1="-120" y1="30" x2="-120" y2="50" stroke="blue" />
             <line x1="-60" y1="30" x2="-60" y2="50" stroke="blue" />
             <line x1="0" y1="30" x2="0" y2="50" stroke="blue" />
             <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
             <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
-            
-            <rect id="activeFunction" x="-175" y="30" height="20" width="50" fill="none" />
 
-            <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-            <text id="t1Label" class="fn" text-anchor="middle" x="-90" y="45"></text>
-            <text id="t2Label" class="fn" text-anchor="middle" x="-30" y="45"></text>
-            <text id="t3Label" class="fn" text-anchor="middle" x="30" y="45"></text>
-            <text id="t4Label" class="fn" text-anchor="middle" x="90" y="45"></text>
-            <text id="t5Label" class="fn" text-anchor="middle" x="150" y="45"></text>
+            <g id="btnLabelGrpT0" class="fn">
+                <rect id="bckgrnT0" x="-180" y="30" height="20" width="58" zorder="" />
+                <text id="btnLabelT0" x="-150" y="45" text-anchor="middle">A</text>
+            </g>
 
-            <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-            <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
+            <g id="btnLabelGrpT1" class="fn">
+                <rect id="bckgrnT1" x="-120" y="30" height="20" width="58" />
+                <text id="btnLabelT1" x="-90" y="45" text-anchor="middle">B</text>
+            </g>
+
+            <g id="btnLabelGrpT2" class="fn">
+                <rect id="bckgrnT2" x="-60" y="30" height="20" width="58" />
+                <text id="btnLabelT2" x="-30" y="45" text-anchor="middle">C</text>
+            </g>
+            <g id="btnLabelGrpT3" class="fn">
+                <rect id="bckgrnT3" x="0" y="30" height="20" width="58" />
+                <text id="btnLabelT3" x="30" y="45" text-anchor="middle">D</text>
+            </g>
+            <g id="btnLabelGrpT4" class="fn">
+                <rect id="bckgrnT4" x="60" y="30" height="20" width="58" />
+                <text id="btnLabelT4" x="90" y="45" text-anchor="middle">E</text>
+            </g>
+
+            <g id="btnLabelGrpT5" class="fn">
+                <rect id="bckgrnT5" x="120" y="30" height="20" width="58" />
+                <text id="btnLabelT5" x="150" y="45" text-anchor="middle">F</text>
+            </g>
+
+            <path d="M 0 30 H170 A 10 10 0 0 1 180 40 V50 H200 V0 H-200 V50 H-180 V40 A 10 10 0 0 1 -170 30   H0" stroke="black" fill="black"></path>
+
+            <rect id="btnT0" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t0'].click()" />
+            <rect id="btnT1" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t1'].click()" />
+            <rect id="btnT2" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t2'].click()" />
+            <rect id="btnT3" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t3'].click()" />
+            <rect id="btnT5" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t4'].click()" />
+            <rect id="btnT5" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['t5'].click()" />
+
         </svg>
 
         <div id="mfdScreen">
 
             <div id="onScreenText">
+
+                <table id="table2">
+                    <tr><th colspan="2">Data Table</th></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
+                    
+                </table>
+
+                <table id="table3">
+                    <tr><td class="dvLabel"></td><td class="data"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td><td class="data"></td></tr>
+                </table>
 
                 <table id="table1">
                     <tr><th colspan="2">DELTA V SUMMARY</th></tr>
@@ -513,19 +956,10 @@
                     <tr><td class="dataLabel"></td><td></td></tr>
                 </table>
 
-                <table id="table2">
-                    <tr><th colspan="2">Ejection Orbit</th></tr>
-                    <tr><td class="dvLabel">Departure</td><td class="data"></td></tr>
-                    <tr><td class="dvLabel">Ejection Angle</td><td class="data"></td></tr>
-                    <tr><td class="dvLabel">Ejection Dv</td><td class="data"></td></tr>
-
-                </table>
-
             </div>
 
             <svg display="none" class="mfdFrame" id="ejectionOrbit" height="360" width="360" viewBox="-200 -250 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-
-                PRIMARY
+                
                 <circle cx="0" cy="0" r="60" stroke="blue" fill="cyan" />
 
                 <circle id="parkOrbit" cx="0" cy="0" r="70" stroke="gray" fill="none" />
@@ -550,9 +984,8 @@
 
         </div>
 
-        <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-
-            <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+        <svg id="bottomFrame" class="mfdFrame" height="50" width="360" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <!--<svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">-->
 
             <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
             <line x1="-60" y1="0" x2="-60" y2="20" stroke="blue" />
@@ -560,65 +993,104 @@
             <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
             <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
 
-            <rect id="activeButton" x="-175" y="0" height="20" width="50" fill="none" />
+            <g class="fn">
+                <rect x="-175" y="0" height="20" width="50" fill="none" />
+                <text id="btnLabelB0" x="-150" y="15" text-anchor="middle" >A</text>
+            </g>
 
-            <text class="fn" id="b0Label" text-anchor="middle" x="-150" y="15"></text>
-            <text class="fn" id="b1Label" text-anchor="middle" x="-90" y="15"></text>
-            <text class="fn" id="b2Label" text-anchor="middle" x="-30" y="15"></text>
-            <text class="fn" id="b3Label" text-anchor="middle" x="30" y="15"></text>
-            <text class="fn" id="b4Label" text-anchor="middle" x="90" y="15"></text>
-            <text class="fn" id="b5Label" text-anchor="middle" x="150" y="15"></text>
+            <g class="fn">
+                <rect x="-115" y="0" height="20" width="50" fill="none" />
+                <text class="fn" id="btnLabelB1" text-anchor="middle" x="-90" y="15">B</text>
+            </g>
 
-            <rect id="button0" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b0')" />
-            <rect id="button1" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress('b1')" />
-            <rect id="button2" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress(2)" />
-            <rect id="button3" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress(3)" />
-            <rect id="button4" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress(4)" />
-            <rect id="button5" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttonPress(5)" />
+            <g class="fn">
+                <rect x="-55" y="0" height="20" width="50" fill="none" />
+                <text class="fn" id="btnLabelB2" text-anchor="middle" x="-30" y="15">C</text>
+            </g>
+
+            <g class="fn">
+                <rect x="5" y="0" height="20" width="50" fill="none" />
+                <text class="fn" id="btnLabelB3" text-anchor="middle" x="30" y="15">D</text>
+            </g>
+
+            <g class="fn">
+                <rect x="65" y="0" height="20" width="50" fill="none" />
+                <text id="btnLabelB4" text-anchor="middle" x="90" y="15">E</text>
+            </g>
+
+            <g class="fn">
+                <rect x="125" y="0" height="20" width="50" fill="none" />
+                <text id="btnLabelB5" text-anchor="middle" x="150" y="15">F</text>
+            </g>
+
+            <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
+
+            <rect id="btnB0" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b0'].click()"/>
+            <rect id="btnB1" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b1'].click()"/>
+            <rect id="btnB2" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b2'].click()"/>
+            <rect id="btnB3" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b3'].click()"/>
+            <rect id="btnB4" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b4'].click()"/>
+            <rect id="btnB5" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="buttons['b5'].click()"/>
+
         </svg>
 
     </div>
 
-    <div id="displayContainer">
+    <div id="displayContainer" style="pointer-events: none;">
 
-        <div id="divAP" class="paramDisp">
-            ALT/APOAPSIS<br>
-            <div class="display">
-                <input name="ap" type="text" value="100" style="width:100px" style="pointer-events: none;">
-                <span id="apOut"></span>
+        <div id="pePanelUnit" class="paramDisp">
+            PERIAPSIS
+            <div class="LCDscreen">
+                <input disabled name="pe" type="text" value="000" style="width:100px">
                 km
             </div>
         </div>
 
-        <div id="divPE" class="paramDisp">
-            PERIAPSIS<div class="display">
-                <input disabled name="pe" type="text" value="000000" style="width:100px"> km
+        <div id="apPanelUnit" class="paramDisp">
+            APOAPSIS<br>
+            <div class="LCDscreen">
+                <input name="ap" type="text" value="000" style="width:100px">
+                km
             </div>
         </div>
 
-        <div class="paramDisp_hidden">ECC<div class="display"><span style="padding-right:10px">0.000</span></div></div>
+        <div id="lanPanelUnit" class="paramDisp">
+            LAN<div class="LCDscreen" width="150px">
+                <input name="lan" type="text" value="000.0" style="width:100px"> deg
+            </div>
+        </div>
+
+        <div id="argPePanelUnit" class="paramDisp">
+            ARG PE<div class="LCDscreen">
+                <input name="argPe" type="text" value="000.0" style="width:50px"> deg
+            </div>
+        </div>
+
+        <div id="utPanelUnit" class="paramDisp">
+            UT<div class="LCDscreen">
+                y:<input name="utY" type="text" value="000" maxlength="3" style="width:18px" >
+                d:<input name="utD" type="text" value="000" style="width:20px">
+                <input name="utH" type="text" value="0" style="width:10px">:<input name="utM" type="text" value="00" style="width:18px">
+            </div>
+        </div>
+
+        <div id="tPePanelUnit" class="paramDisp">
+            T- PE<div class="LCDscreen">
+                y:<input name="tPeY" type="text" value="01" style="width:18px">
+                d:<input name="tPeD" type="text" value="001" style="width:20px">
+                <input name="tPeH" type="text" value="0" style="width:10px">:<input name="tPeM" type="text" value="00" style="width:18px">
+            </div>
+        </div>
+
+        <div id="incPanelUnit" class="paramDisp_inactive">
+            INC<div class="LCDscreen">
+                <input name="inc" type="text" value="000.0" style="width:50px"> deg
+            </div>
+        </div>
+
         <div class="paramDisp_hidden">PERIOD<div class="display">y<span style="width:50">000</span> d:<span>000</span>00:00</div></div>
-        <div class="paramDisp_hidden">LAN<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
-        <div class="paramDisp_hidden">ARG PE<div class="display"><input name="inc" type="text" value="000.0" style="width:50"> deg</div></div>
-
-        <div class="paramDisp_hidden">
-            UT<div class="display">
-                y:<input name="tPe" type="text" value="00" style="width:25">
-                d:<input name="tPe" type="text" value="000" style="width:25">
-                <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
-            </div>
-        </div>
-
-        <div class="paramDisp_hidden">
-            T TO PE<div class="display">
-                y:<input name="tPe" type="text" value="00" style="width:25">
-                d:<input name="tPe" type="text" value="000" style="width:25">
-                <input name="tPe" type="text" value="0" style="width:10">:<input name="tPe" type="text" value="00" style="width:18">
-            </div>
-        </div>
-
-        <div class="paramDisp">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
-        <div class="paramDisp">DELTA V<div class="display"><span id="deltaV">0000.0</span> m/s</div></div>
+        <div class="paramDisp_hidden">EJECTION ANGLE<div class="display"><span id="ejectionAngle">000.0</span> deg</div></div>
+        <div class="paramDisp_hidden">DELTA V<div class="display"><span id="deltaV">0000.0</span> m/s</div></div>
 
     </div>
 
