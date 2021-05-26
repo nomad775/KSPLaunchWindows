@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="multiFunctionDisplay.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
+    <script src="utility.js"></script>
     <script src="orbitalMechanics.js"></script>
 
     <script>
@@ -188,15 +188,19 @@
 
             let v_soi = txOrbit.v_depart - txOrbit.vo;
             ejectionOrbit = HyperbolicOrbit(origin, peAlt, v_soi);
-            
-            fields["dvEjection"].value = ejectionOrbit.deltaV.toFixed(0);
-            fields["ejectionAngle"].value = (ejectionOrbit.ejectionAngle * 180/pi).toFixed(1);
-            
-            fields["sma"].value = parkOrbit.sma;
 
-            updateDisplay("sma");
-            updateDisplay("ejectionAngle");
-            updateDisplay("dvEjection");
+            fields["ejectVpeCir"].value = ejectionOrbit.vPeCir.toFixed(0);
+            fields["ejectVpeHyp"].value = ejectionOrbit.vPeHyp.toFixed(0);
+            fields["ejectDv"].value = ejectionOrbit.deltaV.toFixed(0);
+            fields["ejectAngle"].value = ejectionOrbit.ejectionAngle.toFixed(1);
+            fields["ejectTOF"].value = ejectionOrbit.TOF; 
+            
+
+            updateDisplay("ejectVpeCir");
+            updateDisplay("ejectVpeHyp");
+            updateDisplay("ejectDv");
+            updateDisplay("ejectAngle");
+            updateDisplay("ejectTOF");
         }
 
         function calculatePlaneChangeDv() {
@@ -432,25 +436,23 @@
 
             let originName = params.get("origin");
             let destinationName = params.get("destination");
-            let t = params.get("t");
+            let t = Number(params.get("t"));
 
             origin = planets[originName];
             destination = planets[destinationName];
 
-            fields["tod"].value = convertSecondsToDate(t).toString();
-            updateDisplay("tod")
+            fields["ejectTOD"].value = convertSecondsToUT(t).toString();
+            updateDisplay("ejectTOD")
 
             txOrbit = new TransferOrbit(origin, destination)
             txOrbit.update(t);
 
-            parkOrbit = new Orbit(200000 + origin.r, 200000 + origin.r, 0, 0, origin.mu);
-            updateDisplay("sma", parkOrbit.sma.toFixed(0));
+            parkOrbit = new Orbit(100000 + origin.r, 100000 + origin.r, 0, 0, origin.mu);
 
-            calculateEjectionDv(200000, 200000);
+            calculateEjectionDv(100000, 100000);
             calculatePlaneChangeDv();
-            calculateCaptureDv(200000);
+            calculateCaptureDv(100000);
             total();
-
         }
 
         function updateEjectionOrbit() {
@@ -518,19 +520,21 @@
             $("#utPanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
             $("#tPePanelUnit").removeClass("paramDisp").addClass("paramDisp_inactive");
 
-            $("#table2 th").text("Ejection Orbit");
-            
-            $(fields["sma"].labelElement).text(fields["sma"].label);
-            $(fields["tod"].labelElement).text(fields["tod"].label);
-            $(fields["ejectionAngle"].labelElement).text(fields["ejectionAngle"].label);
-            $(fields["dvEjection"].labelElement).text(fields["dvEjection"].label);
+            $("#table2 th").text("PARK-EJECT");
 
-            $(fields["sma"].dataElement).text(fields["sma"].value);
-            $(fields["tod"].dataElement).text(fields["tod"].value);
-            $(fields["ejectionAngle"].dataElement).text(fields["ejectionAngle"].value);
-            $(fields["dvEjection"].dataElement).text(fields["dvEjection"].value);
+            $(fields["ejectVpeCir"].labelElement).text(fields["ejectVpeCir"].label);
+            $(fields["ejectVpeHyp"].labelElement).text(fields["ejectVpeHyp"].label);
+            $(fields["ejectDv"].labelElement).text(fields["ejectDv"].label);
+            $(fields["ejectAngle"].labelElement).text(fields["ejectAngle"].label);
+            $(fields["ejectTOF"].labelElement).text(fields["ejectTOF"].label);
+            $(fields["ejectTOD"].labelElement).text(fields["ejectTOD"].label);
 
-
+            $(fields["ejectVpeCir"].dataElement).text(fields["ejectVpeCir"].value);
+            $(fields["ejectVpeHyp"].dataElement).text(fields["ejectVpeHyp"].value);
+            $(fields["ejectDv"].dataElement).text(fields["ejectDv"].value);
+            $(fields["ejectAngle"].dataElement).text(fields["ejectAngle"].value);
+            $(fields["ejectTOF"].dataElement).text(fields["ejectTOF"].value);
+            $(fields["ejectTOD"].dataElement).text(fields["ejectTOD"].value);
         }
 
         function setPhasePage() {
@@ -699,10 +703,15 @@
             fields["parkAp"] = { value: 102, dataElement: "input[name='ap']", callback: setInactive };
 
             // PARK - OUTPUT
-            fields["sma"] = { value: 0, label: "PARK SMA", labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
-            fields["tod"] = { value: 0, label: "TOD", labelElement: "#table2 tr:eq(2) td:eq(0)", dataElement: "#table2 tr:eq(2) td:eq(1)" };
-            fields["ejectionAngle"] = { value: 0, label: "EJECTION ANGLE", labelElement: "#table2 tr:eq(3) td:eq(0)", dataElement: "#table2 tr:eq(3) td:eq(1)" };
+            //fields["sma"] = { value: 0, label: "PARK SMA", labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
+            fields["ejectVpeCir"] =   { value: 0, label: "V PE CIR"  ,     labelElement: "#table2 tr:eq(1) td:eq(0)", dataElement: "#table2 tr:eq(1) td:eq(1)" };
+            fields["ejectVpeHyp"] =   { value: 0, label: "V PE HYP"  ,     labelElement: "#table2 tr:eq(2) td:eq(0)", dataElement: "#table2 tr:eq(2) td:eq(1)" };
+            fields["ejectDv"] =       { value: 0, label: "DV EJECT"  ,     labelElement: "#table2 tr:eq(3) td:eq(0)", dataElement: "#table2 tr:eq(3) td:eq(1)" };
+            fields["ejectTOF"] =      { value: 0, label: "TOF TO SOI",     labelElement: "#table2 tr:eq(4) td:eq(0)", dataElement: "#table2 tr:eq(4) td:eq(1)" };
+            fields["ejectTOD"] =           { value: 0, label: "TOD",            labelElement: "#table2 tr:eq(5) td:eq(0)", dataElement: "#table2 tr:eq(5) td:eq(1)" };
+            fields["ejectAngle"] = { value: 0, label: "EJECTION ANGLE", labelElement: "#table2 tr:eq(6) td:eq(0)", dataElement: "#table2 tr:eq(6) td:eq(1)" };
 
+            
 
             // PHASE - INPUT FIELDS
 
@@ -821,55 +830,7 @@
             //hyp();
             getPlanetsXML(initialize);
 
-            console.log(modRev(15 * pi / 180) * 180 / pi);  //15
-            console.log(modRev(-15 * pi / 180) * 180 / pi); //345
-            console.log(modRev(430 * pi / 180) * 180 / pi); //70
-            console.log(modRev(-430 * pi / 180) * 180 / pi);//290
-
         })
-
-
-        // COPIED FROM planetPositions.js for now
-
-        const secondsPerMinute = 60;
-        const secondsPerHour = 60 * secondsPerMinute;
-        const secondsPerDay = 6 * secondsPerHour;
-        const secondsPerYear = 426 * secondsPerDay;
-
-        function convertSecondsToDate(seconds) {
-
-            let year = Math.trunc(seconds / secondsPerYear);
-            let secondsRemaining = seconds % secondsPerYear;
-
-            let day = Math.trunc(secondsRemaining / secondsPerDay);
-            secondsRemaining = secondsRemaining % secondsPerDay;
-
-            let hour = Math.trunc(secondsRemaining / secondsPerHour);
-            secondsRemaining = secondsRemaining % secondsPerHour;
-
-            let minute = Math.trunc(secondsRemaining / secondsPerMinute);
-            let second = secondsRemaining;
-
-            return {
-                y: year, d: day, h: hour, m: minute, s: second, toString() { return `y:${this.y} d:${this.d}  ${this.h}:${this.m}` }
-            };
-        }
-
-        function convertDateToSeconds(year, day, hour, minute, elapsedTime=false) {
-
-            if (elapsedTime) { year++; day++; }
-
-            var seconds = (year-1) * secondsPerYear;
-            seconds += (day-1) * secondsPerDay;
-            seconds += hour * secondsPerHour;
-            seconds += minute * secondsPerMinute;
-
-            seconds = seconds > 0 ? seconds : 0;
-            return seconds;
-        }
-        // END COPIED
-
-
 
     </script>
 
@@ -936,7 +897,8 @@
                     <tr><td class="dvLabel"></td><td class="data"></td></tr>
                     <tr><td class="dvLabel"></td><td class="data"></td></tr>
                     <tr><td class="dvLabel"></td><td class="data"></td></tr>
-                    
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
+                    <tr><td class="dvLabel"></td><td class="data"></td></tr>
                 </table>
 
                 <table id="table3">
