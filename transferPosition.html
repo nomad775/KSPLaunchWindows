@@ -4,28 +4,202 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" >
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
 
     <link rel="stylesheet" href="multiFunctionDisplay.css" />
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
+    <script src="utility.js"></script>
     <script src="orbitalMechanics.js"></script>
     <script src="planetPositions.js"></script>
+
     <script>
 
-        function next(){
+
+        var viewBox;
+        var boolDown;
+        var mouseDown;
+
+        var lastD;
+        var lastTouch;
+        var lastX;
+        var lastY;
+
+
+        function zoomWheel(event) {
+
+            var v = event.deltaY;
+            var zoomPercent = v > 0 ? 1.25 : .75;
+            zoom(zoomPercent);
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+
+        function zoomAll() {
+
+            let orbitel = document.getElementById("orbit_destination");
+            let orbit = orbitel.getBBox();
+
+            console.log(orbitel.getBBox());
+
+            viewBox.x = orbit.x;
+            viewBox.y = orbit.y;
+            viewBox.width = orbit.width;
+            viewBox.height = orbit.height;
+
+            boolDown = false;
+            lastX = NaN;
+            lastY = NaN;
+        }
+
+        function zoom(amount) {
+
+            console.log(viewBox.height);
+
+            let min = 10;
+            let max = 1200;
+
+            let newWidth = viewBox.width * amount;
+            let newHeight = viewBox.height * amount;
+
+            if (newWidth <= min || newHeight <= min) return;
+            if (newWidth >= max || newHeight >= max) return;
+
+            viewBox.x += -amount / 2;
+            viewBox.y += -amount / 2;
+
+            viewBox.height = newHeight;
+            viewBox.width = newWidth;
+
+            //if (viewBox.x < -1100) viewBox.x = -1100;
+            //if (viewBox.y < -1100) viewBox.y = -1100;
+
+            //if (viewBox.x > -300) viewBox.x = -300;
+            //if (viewBox.y > -300) viewBox.y = -300;
+
+
+
+
+            /* var r = 12 / rScale[zoom];
+             console.log(r);
+
+             document.querySelectorAll(".planet").forEach(
+                 function(item, index){
+                     var radius = item.attributes.getNamedItem("r");
+                     radius.nodeValue=r; //25/zoom;
+                     console.log("R:" + r);
+                 }
+             )*/
+        }
+
+        function toggleMouseDown(event) {
+
+            boolDown = !boolDown;
+
+            if (!boolDown) {
+                lastX = NaN;
+                lastY = NaN;
+            }
+        }
+
+        function touchDown(event) {
+            lastX = event.clientX;
+            lastY = event.clientY;
+        }
+
+        function touchUp() {
+            lastX = NaN;
+            lastY = NaN;
+            boolDown = false;
+        }
+
+        function pan(event) {
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            //if(!mouseDown.active) return;
+            if (boolDown) {
+
+                //if (event.touches.length == 1) {
+
+                //let x = event.touches[0].clientX;
+                //let y = event.touches[0].clientY;
+
+                let x = event.clientX;
+                let y = event.clientY;
+
+                let dx = x - lastX;
+                let dy = y - lastY;
+
+                if (!isNaN(dx) && !isNaN(dy)) {
+
+                    viewBox.x -= dx;
+                    viewBox.y -= dy;
+
+                }
+
+                lastX = x;
+                lastY = y;
+
+                /*} else {
+
+                    let x0 = event.touches[0].clientX;
+                    let y0 = event.touches[0].clientY;
+                    let x1 = event.touches[1].clientX;
+                    let y1 = event.touches[1].clientY;
+                    let d = Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
+                    let deltaD = lastD - d;
+
+                    if (d > lastD) {
+                        zoom(-150);
+                    } else {
+                        zoom(150)
+                    }
+
+                    lastD = d;
+                */
+            }
+        }
+
+        $(document).ready(function () {
+
+            mouseDown = { active: false, x: 0, y: 0 };
+            boolDown = false;
+
+            var svg = document.getElementById("mfdScreen");
+            var vb = svg.viewBox;
+
+            viewBox = vb.baseVal;
+
+            svg.addEventListener("wheel", zoomWheel);
+
+            svg.addEventListener("mousemove", pan);
+            svg.addEventListener("pointerdown", toggleMouseDown);
+            svg.addEventListener("pointerup", toggleMouseDown);
+            svg.addEventListener("mouseleave", svg.pointerdown);
+            svg.addEventListener("dblclick", zoomAll);
+
+            //svg.addEventListener("ontouchmove", pan(event));
+            //svg.addEventListener("ontouchend", touchUp(event));
+
+        })
+
+        function next() {
 
             var origin = originPlanet.name;
             var destination = destinationPlanet.name;
             var t = getCurrentTime();
-            var vSOI = 1384;
 
             var qryStr = `?origin=${origin}&destination=${destination}&t=${t}`;
             location = "ejectionAngle.html" + qryStr;
         }
 
+
     </script>
+
 </head>
 <body>
 
@@ -39,20 +213,21 @@
         <line x1="60" y1="30" x2="60" y2="50" stroke="blue" />
         <line x1="120" y1="30" x2="120" y2="50" stroke="blue" />
 
-        <text class="fn" text-anchor="middle" x="-150" y="45">FN</text>
-        <text class="fn" text-anchor="middle" x="-90" y="45"></text>
-        <text class="fn" text-anchor="middle" x="-30" y="45"></text>
-        <text class="fn" text-anchor="middle" x="30" y="45"></text>
-        <text class="fn" text-anchor="middle" x="90" y="45"></text>
-        <text class="fn" text-anchor="middle" x="150" y="45">NEXT</text>
+        <g class="fn"><text class="fn" text-anchor="middle" x="-150" y="45">FN</text></g>
+        <g class="fn"><text class="fn" text-anchor="middle" x="-90" y="45"></text></g>
+        <g class="fn"><text class="fn" text-anchor="middle" x="-30" y="45"></text></g>
+        <g class="fn"><text class="fn" text-anchor="middle" x="30" y="45"></text></g>
+        <g class="fn"><text class="fn" text-anchor="middle" x="90" y="45"></text></g>
+        <g class="fn"><text class="fn" text-anchor="middle" x="150" y="45">NEXT</text></g>
 
         <rect id="button" x="-175" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="-115" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="-55" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="5" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
         <rect id="button" x="65" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="" />
-        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="next()"/>
-    </svg>
+        <rect id="button" x="125" y="5" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="next()" />
+
+</svg>
     
     <svg id="mfdScreen" class="mfdFrame" height="360" width="360" viewBox="-136 -136  272 272" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
@@ -67,7 +242,11 @@
 
         <!-- PLANETS -->
         <circle id="planet_origin" cx="155.37" cy="152.68" r="10" fill="green" stroke="black" />
+        <circle id="planetSOI_origin" cx="155.37" cy="152.68" r="0" fill="none" stroke="black" />
+
         <circle id="planet_destination" cx="155.37" cy="152.68" r="10" fill="crimson" stroke="black" />
+        <circle id="planetSOI_destination" cx="155.37" cy="152.68" r="0" fill="none" stroke="black" />
+
         <circle id="planet_destination_future" cx="155.37" cy="152.68" r="10" fill="crimson" fill-opacity="30%" stroke="black" />
 
         <path id="txOrbit" stroke="gray" fill="none" stroke-dashArray="6 4 6" />
@@ -75,17 +254,24 @@
         <!-- DECORATIONS -->
 
         <line id="line1" x1="0" y1="0" x2="120" y2="120" stroke="lightblue"
-                stroke-dashArray="15 5 5 5 1 5 5 5 10 5" />
+              stroke-dashArray="15 5 5 5 1 5 5 5 10 5" />
 
-        <circle id="txMarker" cx="0" cy="0" r="5" stroke="black" fill="white" />
+        <g id="txMarker" transform="translate(10,10)" stroke-width="2">
+            <circle id="txMarker" cx="0" cy="0" r="12" stroke="green" fill="none" stroke-opacity="70%" />
+            <line x1="10" y1="0" x2="18" y2="0" stroke="green" />
+            <line x1="0" y1="10" x2="0" y2="18" stroke="green" />
+            <line x1="-10" y1="0" x2="-18" y2="0" stroke="green" />
+            <line x1="0" y1="-10" x2="0" y2="-18" stroke="green" />
+            <circle cx="0" cy="0" r="1" storke="green" fill="green"/>
+        </g>
 
         <path id="destTOF" stroke="yellow" stroke-width=3 fill="none" stroke-opacity="30%" />
         <path id="txTOF" stroke="lightgreen" stroke-width=3 fill="none" stroke-opacity="30%" />
-       
+
     </svg>
 
     <svg id="bottomFrame" class="mfdFrame" height="50px" width="360px" viewBox="-180 0 360 50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-        
+
         <path d="M 0 20 H180 V0 H200 V50 H-200 V0 H-180 V20 H0" stroke="black" fill="black"></path>
 
         <line x1="-120" y1="0" x2="-120" y2="20" stroke="blue" />
@@ -94,18 +280,40 @@
         <line x1="60" y1="0" x2="60" y2="20" stroke="blue" />
         <line x1="120" y1="0" x2="120" y2="20" stroke="blue" />
 
-        <text class="fn" text-anchor="middle" x="-150" y="15">F.BCK</text>
-        <text class="fn" text-anchor="middle" x="-90" y="15">BCK</text>
-        <text class="fn" text-anchor="middle" x="-30" y="15">STEP-</text>
-        <!--<text class="fn" text-anchor="middle" x="0" y="15">0</text>-->
-        <text class="fn" text-anchor="middle" x="30" y="15">STEP+</text>
-        <text class="fn" text-anchor="middle" x="90" y="15">FWD</text>
-        <text class="fn" text-anchor="middle" x="150" y="15">F.FWD</text>
+        <g class="fn">
+            <rect x="-180" y="25" height="20" width="60" />
+            <text class="fn" text-anchor="middle" x="-150" y="15">F.BCK</text>
+        </g>
+
+        <g class="fn">
+            <rect x="-120" y="25" height="20" width="60" />
+            <text text-anchor="middle" x="-90" y="15">BCK</text>
+        </g>
+
+        <g class="fn">
+            <rect x="-175" y="25" height="20" width="60" />
+            <text class="fn" text-anchor="middle" x="-30" y="15">STEP-</text>
+        </g>
+
+        <g class="fn">
+            <rect x="-175" y="25" height="20" width="50" />
+            <text class="fn" text-anchor="middle" x="30" y="15">STEP+</text>
+        </g>
+
+        <g class="fn">
+            <rect x="-175" y="25" height="20" width="50" />
+            <text class="fn" text-anchor="middle" x="90" y="15">FWD</text>
+        </g>
+
+        <g class="fn">
+            <rectx="-175" y="25" height="20" width="50"/>
+            <text class="fn" text-anchor="middle" x="150" y="15">F.FWD</text>
+        </g>
 
         <rect id="button" x="-175" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, -1)" />
         <rect id="button" x="-115" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, -.5)" />
-        <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(-1)" />
-        <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(1)" />
+        <rect id="button" x="-55" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(-1/6)" />
+        <rect id="button" x="5" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="onStepButton(1/6)" />
         <rect id="button" x="65" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(100, .5)" />
         <rect id="button" x="125" y="25" height="20" width="50" rx="5" ry="5" stroke="gray" fill="lightgray" onclick="toggleAnim(25, 1)" />
     </svg>

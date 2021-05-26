@@ -1,8 +1,3 @@
-const secondsPerMinute = 60;
-const secondsPerHour = 60 * secondsPerMinute;
-const secondsPerDay = 6 * secondsPerHour;
-const secondsPerYear = 426 * secondsPerDay;
-
 var r = 20;
 
 var originPlanet;
@@ -109,9 +104,10 @@ class svgEllipiticalOrbit{
         $("#line1").attr("y1", oy);
         $("#line1").attr("x2", dx);
         $("#line1").attr("y2", dy);
-        
-        $("#txMarker").attr("cx", dx);
-        $("#txMarker").attr("cy", dy);
+
+        let transform = `translate(${dx},${dy})`
+        $("#txMarker").attr("transform", transform);
+        //$("#txMarker").attr("cy", dy);
     }
 }
 
@@ -130,17 +126,29 @@ class svgPartialArc{
     
     update(){
         
-        var a = this.orbit.a;
-        var b = this.orbit.b;
-        var ang = this.orbit.ang;
+        let a = this.orbit.a;
+        let b = this.orbit.b;
+        let ang = this.orbit.ang;
         
-        var ox = this.startObj.attr("cx");
-        var oy = this.startObj.attr("cy");
+        let ox = this.startObj.attr("cx");
+        let oy = this.startObj.attr("cy");
         
-        var dx = this.endObj.attr("cx");
-        var dy = this.endObj.attr("cy");
-        
-        var data = `M ${ox} ${oy} A ${a} ${b} ${ang} 0 0 ${dx} ${dy}`
+        let dx = this.endObj.attr("cx");
+        let dy = this.endObj.attr("cy");
+
+        let ang1 = Math.atan2(-oy, ox);
+        let ang2 = Math.atan2(-dy, dx);
+
+        let f = 0;
+        //console.log(this.jqOrbit.attr("id"));
+
+        if (this.jqOrbit.attr("id") == "destTOF") {
+            f=1
+            let cross = ox * dy - dx * oy;
+            if (cross < 0) f = 0;
+        }
+
+        var data = `M ${ox} ${oy} A ${a} ${b} ${ang} ${f} 0 ${dx} ${dy}`
         
         this.jqOrbit.attr("d", data);
     }
@@ -148,10 +156,15 @@ class svgPartialArc{
 
 class svgPlanet{
     
-    constructor(id, planet, t){
+    constructor(id, planet, t, soi){
         
         this.jqPlanet = $(id);
+        this.jqSOI = $(soi);
+
         this.planet = planet;
+
+        let r_soi = planet.soi * scaleFactor;
+        this.jqSOI.attr("r", r_soi);
         
         this.update(t);
     }
@@ -166,6 +179,10 @@ class svgPlanet{
         
         this.jqPlanet.attr("cx", x);
         this.jqPlanet.attr("cy", y);
+
+        this.jqSOI.attr("cx", x);
+        this.jqSOI.attr("cy", y);
+
     }
     
     
@@ -220,12 +237,27 @@ function initialize(){
     params = new URLSearchParams(location.search);
     var origin = params.get("originPlanet");
     var destination = params.get("destinationPlanet");
-    var y = params.get("y");
-    var d = params.get("d");
-
+    var t = Number(params.get("t"));
+    
     originPlanet = planets[origin];
     destinationPlanet = planets[destination];
-    
+
+    txOrbit = new TransferOrbit(originPlanet, destinationPlanet);
+
+    // SET AT MEAN ESTIMATE
+    txOrbit.meanEstimate(t);
+
+    t = txOrbit.t;
+    date = convertSecondsToUT(t);
+
+    console.log("mean estimate " + date.toString());
+    $("input[name='UT_y']").val(date.y);
+    $("input[name='UT_d']").val(date.d);
+    $("input[name='UT_h']").val(date.h);
+    $("input[name='UT_m']").val(date.m);
+
+
+    //    INITIALIZE SVG
     scaleFactor = 1/1e8;
     setViewBox(originPlanet, destinationPlanet);
     //scalePlanets(originPlanet, destinationPlanet);
@@ -235,24 +267,18 @@ function initialize(){
     svgDestinationOrbit = new svgEllipiticalOrbit("#orbit_destination", destinationPlanet);
     
     // planets
-    svgOriginPlanet = new svgPlanet("#planet_origin", originPlanet, 0);
-    svgDestinationPlanet = new svgPlanet("#planet_destination", destinationPlanet, 0);
+    svgOriginPlanet = new svgPlanet("#planet_origin", originPlanet, 0, "#planetSOI_origin");
+    svgDestinationPlanet = new svgPlanet("#planet_destination", destinationPlanet, 0, "#planetSOI_destination");
     
     // tx orbit
-    txOrbit = new TransferOrbit(originPlanet, destinationPlanet);
-    
-    svgTxOrbit = new svgEllipiticalOrbit("#txOrbit", txOrbit);svgTxOrbit = new svgEllipiticalOrbit("#txOrbit", txOrbit);
+    svgTxOrbit = new svgEllipiticalOrbit("#txOrbit", txOrbit);
+    //svgTxOrbit = new svgEllipiticalOrbit("#txOrbit", txOrbit);
     
     svgDestinationPlanet_future = new svgPlanet("#planet_destination_future", destinationPlanet, txOrbit.TOF);
     
     svgDestTOF = new svgPartialArc("#destTOF", svgDestinationOrbit, svgDestinationPlanet.jqPlanet, svgDestinationPlanet_future.jqPlanet);    
     svgTxTOF = new svgPartialArc("#txTOF", svgTxOrbit, svgOriginPlanet.jqPlanet, $("#txMarker") );
 
-    //$("#originPlanetData p").text(origin);
-    //$("#destinationPlanetData p").text(destination);
-
-    $("input[name='UT_y']").val(y);
-    $("input[name='UT_d']").val(d); 
     onDateChange();
 }
 
@@ -319,33 +345,7 @@ function getCurrentTime(){
   
 }
 
-function convertDateToSeconds(year, day, hour, minute){
 
-    var seconds = year * secondsPerYear;
-    seconds += day * secondsPerDay;
-    seconds += hour * secondsPerHour;
-    seconds += minute * secondsPerMinute;
-    
-    seconds = seconds>0 ? seconds: 0;
-    return seconds;
-}
-
-function convertSecondsToDate(seconds){
-
-    let year = Math.trunc(seconds/secondsPerYear);
-    let secondsRemaining = seconds % secondsPerYear;
-    
-    let day = Math.trunc(secondsRemaining/secondsPerDay);
-    secondsRemaining = secondsRemaining % secondsPerDay;
-    
-    let hour = Math.trunc(secondsRemaining / secondsPerHour);
-    secondsRemaining = secondsRemaining % secondsPerHour;
-    
-    let minute = Math.trunc(secondsRemaining / secondsPerMinute);
-    let second = secondsRemaining;
-    
-    return { y: year, d: day, h: hour, m: minute, s: second };
-}
 
 function updateDisplay(t) {
 
@@ -358,7 +358,7 @@ function updateDisplay(t) {
     $("#lnDt1").text(ln_dt1);
     $("#lnDif").text(ln_dif);
 
-    let tof = convertSecondsToDate(txOrbit.TOF);
+    let tof = convertSecondsToDateObj(txOrbit.TOF);
     $("#tofY").text(tof.y);
     $("#tofD").text(tof.d);
     $("#tofH").text(tof.h);

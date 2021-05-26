@@ -1,22 +1,9 @@
 //<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-const pi = Math.atan(1)*4;
-const mu_sun = 1172332800000000000;
-
 var planets = {};
 var transferWindows = [];
 
 var currentTime;
-
-function modRev(angle, places){
-    var a = (angle * 10**places).toFixed(0);
-    var rev = ((2*pi)*10**places).toFixed(0);
-    var rem = a % rev;
-    rem = rem/(10**places);
-    if(rem<0) rem+=2*pi;
-    
-    return rem;
-}
 
 class Planet{
     
@@ -38,6 +25,7 @@ class Planet{
     cy = 0;
 
     constructor(name, sma, ecc, inc, LAN, LnPe, mean0, mu, soi, r){
+
         this.name = name;
         this.sma = sma;
         this.ecc = ecc;
@@ -49,7 +37,7 @@ class Planet{
         this.r = r;
         this.soi = soi
         
-        this.period = 2*pi*Math.sqrt(this.sma**3/mu_sun); //secondsPerDay;
+        this.period = 2*pi*Math.sqrt(this.sma**3/mu_sun);
         this.theta0 = this.trueAnomaly(mean0);
         this.Ln0 = this.LnPe + this.theta0;
         
@@ -102,15 +90,15 @@ class Planet{
 
      
     v(r) {
-        return Math.sqrt(mu_sun * (2 / r - 1 / this.sma));
-
-        //Math.sqrt(mu_sun * (2 / this.ro - 2 / (this.ro + this.rd)))
-        //math.sqrt(mu_sun / r);
-
         //v^2 = k(2/r-1/a)
         //v^2 = [k/p](1+e^2+2*e*cos(?))
+
+        return Math.sqrt(mu_sun * (2 / r - 1 / this.sma));
     }
-    
+
+    flightAngelAtTheta(theta) {
+        return Math.atan(this.ecc * Math.sin(theta) / (1 + this.ecc * Math.cos(theta)));
+    }
 }
 
 class TransferOrbit{
@@ -120,25 +108,46 @@ class TransferOrbit{
         this.originPlanet = originPlanet;
         this.destinationPlanet = destinationPlanet;
         
-        var r_i = this.originPlanet.sma;
-        var r_o = this.destinationPlanet.sma;
-        
-        this.ap_mean = (r_i > r_o) ? r_i : r_o;
-        this.pe_mean = (r_i < r_o) ? r_i : r_o;
-        
-        this.sma_mean = (this.ap_mean + this.pe_mean)/2
-        
-        this.TOF_mean = pi * Math.sqrt(this.sma_mean**3/mu_sun);
-        
         this.update(0)
     }
-    
+
+    meanEstimate(t) {
+
+        let r1 = this.originPlanet.sma;
+        let P1 = this.originPlanet.period;
+        let Ln1 = this.originPlanet.MeanLnAtTimeT(t);
+
+        let r2 = this.destinationPlanet.sma;
+        let P2 = this.destinationPlanet.period;
+        let Ln2 = this.destinationPlanet.MeanLnAtTimeT(t);
+
+        let relAngVel = 2*pi/P2 - 2*pi/P1;
+        let dir = Math.sign(relAngVel);
+
+        let phi = modRev(Ln2 - Ln1);
+
+        let a = (r1 + r2) / 2
+        let tof = pi * Math.sqrt(a ** 3 / mu_sun);
+
+        let deltaTheta = tof * (2 * pi) / P2;
+        let phix = pi - deltaTheta;
+              
+        let epsilon = modRev(dir * (phix - phi));
+        let deltaT = dir * epsilon / relAngVel;
+
+        this.update(t + deltaT);
+    }
+
     update(t){
-        
-        this.Ln_rdv_mean = (this.originPlanet.MeanLnAtTimeT(t) + pi) % (2*pi);
-        
+
+        this.t = t;
+
+        //this.Ln_rdv_mean = (this.originPlanet.MeanLnAtTimeT(t) + pi) % (2*pi);
+
         this.Ln_o = this.originPlanet.LnAtTimeT(t);
         this.Ln_d = this.Ln_o - pi;
+
+        this.LnPe = this.Ln_o < this.Ln_d ? this.Ln_o : this.Ln_d;
         
         this.ro = this.originPlanet.rAtLn(this.Ln_o);
         this.rd = this.destinationPlanet.rAtLn(this.Ln_d);
@@ -178,7 +187,7 @@ class TransferOrbit{
         let bz = Math.cos(id);
 
         //vector towards AN/DN is cross product
-        let cx = ay * bz - az * by;
+        let cx = ay * bz - az * by; 
         let cy = az * bx - ax * bz;
         let cz = ax * by - ay * bx;
 
@@ -186,9 +195,9 @@ class TransferOrbit{
         //cross product = mag A * mag B * sin(theta); mag A = mag B = 1
         let mag = Math.sqrt(cx ** 2 + cy ** 2 + cz ** 2);
         let inc = Math.asin(mag);
-        let Ln = Math.acos(cx);
+        let Ln = Math.acos(cx/mag);
 
-        var r = this.a * (1 - this.e ** 2) / (1 + this.e * Math.cos(Ln - this.Ln_o))
+        let r = this.a * (1 - this.e ** 2) / (1 + this.e * Math.cos(Ln - this.LnPe));
 
         let v = Math.sqrt(mu_sun * (2 / r - 1 / this.a));
         let dV = 2 * v * Math.sin(inc / 2);
@@ -218,17 +227,29 @@ function HyperbolicOrbit(body, peAlt, v_soi){
     // v_r^2/mu = 2/r - 1/a => 2/r - v^2/mu = 1/a
     let soi = body.soi;
     let mu = body.mu;
-    let a_hyp = Math.abs(1/(2/soi - v2**2/mu));
+    let a = Math.abs(1/(2/soi - v2**2/mu));
 
     // calculate v1 from vis-viva eqn
-    let v1 = Math.sqrt(mu*(2/r_pe + 1/a_hyp));
+    let v1 = Math.sqrt(mu*(2/r_pe + 1/a));
     let v0 = Math.sqrt(mu/r_pe);
     let deltaV = v1 - v0;
 
-    let theta = Math.acos(a_hyp / (a_hyp + r_pe));
-    let halfAngle = (pi - theta) * 180/pi;
+    // theta is angle between a and f (focus), where f = a + r_pe
+    // ejection angle is pi - theta, also is half of turning angle
+    let theta = Math.acos(a / (a + r_pe));
+    let ejectionAngle = (pi - theta);
 
-    return {deltaV: deltaV, halfAngle: halfAngle};
+    // time of flight
+    let e = Math.abs((a+r_pe) / a);
+    let l = -a * (1 - e ** 2);
+    let theta2 = Math.acos((l / soi - 1) / e);
+    let F = Math.acosh((e + Math.cos(theta2)) / (1 + e * Math.cos(theta2)));
+    let M = e * Math.sinh(F) - F;
+    let TOF = Math.sqrt((a) ** 3 / mu) * M;
+
+    TOF = convertSecondsToDateObj(TOF).toString();
+
+    return { vPeCir: v0, vPeHyp: v1, deltaV: deltaV, ejectionAngle: ejectionAngle, TOF: TOF};
 }
 
 
@@ -242,7 +263,7 @@ function createPlanetObject(){
 
     let sma = Number($(this).find("orbit sma").text());
     let ecc = Number($(this).find("orbit ecc").text());
-    let argPe = Number($(this).find("orbit argPe").text() );
+    let argPe = Number($(this).find("orbit argPe").text()) * pi / 180;
     let LAN = Number($(this).find("orbit lan").text()) * pi / 180;
     let theta0 = Number($(this).find("orbit mean0").text());
     let inc = Number($(this).find("orbit inc").text()) * pi / 180;
@@ -251,10 +272,10 @@ function createPlanetObject(){
     let mu = Number($(this).find("mu").text());
     let r = Number($(this).find("radius").text());
 
-    var LnPe = (argPe + LAN) * pi/180;
-    LnPe %= (2*pi);
+    let LnPe = modRev(argPe + LAN);
+
     planet = new Planet(name, sma, ecc, inc, LAN, LnPe, theta0, mu, soi, r);
-    
+
     planets[name] = planet;
  
     index = planets.length-1;
